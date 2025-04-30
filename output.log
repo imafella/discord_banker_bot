@@ -1,30 +1,7 @@
-2022-05-25 16:54:19,388:INFO:logging in using static token
-2022-05-25 16:54:19,982:INFO:Shard ID None has sent the IDENTIFY payload.
-2022-05-25 16:54:20,244:INFO:Shard ID None has connected to Gateway: ["gateway-prd-main-2vlx",{"micros":180347,"calls":["discord-sessions-green-prd-2-166",{"micros":179644,"calls":["start_session",{"micros":144657,"calls":["discord-api-f67d8d77-gd26r",{"micros":140639,"calls":["get_user",{"micros":42834},"add_authorized_ip",{"micros":7514},"get_guilds",{"micros":26297},"coros_wait",{"micros":1}]}]},"guilds_connect",{"micros":1,"calls":[]},"presence_connect",{"micros":27986,"calls":[]}]}]}] (Session ID: d7b466e527c47a5b205ac3bb1255a519).
-2022-05-25 17:12:47,076:INFO:Websocket closed with 1001, attempting a reconnect.
-2022-05-25 17:12:47,077:INFO:Got a request to RESUME the websocket.
-2022-05-25 17:12:47,560:INFO:Shard ID None has sent the RESUME payload.
-2022-05-25 17:12:47,644:INFO:Shard ID None has successfully RESUMED session d7b466e527c47a5b205ac3bb1255a519 under trace ["gateway-prd-main-2vlx",{"micros":1029,"calls":["discord-sessions-green-prd-2-166",{"micros":23}]}].
-2022-05-25 18:20:16,266:INFO:Got a request to RESUME the websocket.
-2022-05-25 18:20:16,741:INFO:Shard ID None has sent the RESUME payload.
-2022-05-25 18:20:16,841:INFO:Shard ID None has successfully RESUMED session d7b466e527c47a5b205ac3bb1255a519 under trace ["gateway-prd-main-fdpt",{"micros":3920,"calls":["discord-sessions-green-prd-2-166",{"micros":24}]}].
-2022-05-25 19:24:20,783:INFO:Got a request to RESUME the websocket.
-2022-05-25 19:24:21,241:INFO:Shard ID None has sent the RESUME payload.
-2022-05-25 19:24:21,318:INFO:Shard ID None has successfully RESUMED session d7b466e527c47a5b205ac3bb1255a519 under trace ["gateway-prd-main-109w",{"micros":600,"calls":["discord-sessions-green-prd-2-166",{"micros":20}]}].
-2022-05-25 21:54:51,716:INFO:Got a request to RESUME the websocket.
-2022-05-25 21:54:52,211:INFO:Shard ID None has sent the RESUME payload.
-2022-05-25 21:54:52,287:INFO:Shard ID None has successfully RESUMED session d7b466e527c47a5b205ac3bb1255a519 under trace ["gateway-prd-main-thmf",{"micros":1676,"calls":["discord-sessions-green-prd-2-166",{"micros":23}]}].
-2022-05-26 00:55:32,640:INFO:Got a request to RESUME the websocket.
-2022-05-26 00:55:33,104:INFO:Shard ID None has sent the RESUME payload.
-2022-05-26 00:55:33,187:INFO:Shard ID None has successfully RESUMED session d7b466e527c47a5b205ac3bb1255a519 under trace ["gateway-prd-main-f382",{"micros":4216,"calls":["discord-sessions-green-prd-2-166",{"micros":21}]}].
-2022-05-26 04:00:32,085:INFO:Got a request to RESUME the websocket.
-2022-05-26 04:00:32,531:INFO:Shard ID None has sent the RESUME payload.
-2022-05-26 04:00:32,605:INFO:Shard ID None has successfully RESUMED session d7b466e527c47a5b205ac3bb1255a519 under trace ["gateway-prd-main-bvnr",{"micros":505,"calls":["discord-sessions-green-prd-2-166",{"micros":22}]}].
-2022-05-26 07:20:49,777:INFO:Got a request to RESUME the websocket.
-2022-05-26 07:20:50,221:INFO:Shard ID None has sent the RESUME payload.
-2022-05-26 07:20:50,298:INFO:Shard ID None has successfully RESUMED session d7b466e527c47a5b205ac3bb1255a519 under trace ["gateway-prd-main-7xkv",{"micros":549,"calls":["discord-sessions-green-prd-2-166",{"micros":21}]}].
-2022-05-26 10:15:09,354:INFO:Received signal to terminate bot and event loop.
-2022-05-26 10:15:09,355:INFO:Cleaning up tasks.
-2022-05-26 10:15:09,356:INFO:Cleaning up after 1 tasks.
-2022-05-26 10:15:09,363:INFO:All tasks finished cancelling.
-2022-05-26 10:15:09,363:INFO:Closing the event loop.
+2025-04-29 23:34:36,895:INFO:logging in using static token
+2025-04-29 23:34:37,714:INFO:Shard ID None has connected to Gateway (Session ID: f576b854492cbb14bede4ee4b1e32800).
+2025-04-30 03:04:06,139:INFO:Shard ID None has successfully RESUMED session f576b854492cbb14bede4ee4b1e32800.
+2025-04-30 04:04:19,776:INFO:Shard ID None has successfully RESUMED session f576b854492cbb14bede4ee4b1e32800.
+2025-04-30 04:54:13,319:INFO:Shard ID None has successfully RESUMED session f576b854492cbb14bede4ee4b1e32800.
+2025-04-30 08:19:22,355:INFO:Shard ID None has successfully RESUMED session f576b854492cbb14bede4ee4b1e32800.
+2025-04-30 09:03:47,067:INFO:Shard ID None has successfully RESUMED session f576b854492cbb14bede4ee4b1e32800.
