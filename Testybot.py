@@ -1,15 +1,9 @@
-import asyncio
 import discord
 import logging
 import os, traceback
-from discord.ext import commands
-from discord.ext.commands import Bot
 from dotenv import load_dotenv
 from ThingyDo.DieRoll import *
-from ThingyDo.Shout import shout
-from ThingyDo.Info import *
-from ThingyDo.Ascii import *
-from ThingyDo.GetGreeting import *
+from ThingyDo.Messages import *
 
 
 #
@@ -43,13 +37,18 @@ async def on_error(event, *args, **kwargs):
 @client.event
 async def on_member_join(member:discord.Member):
 	username = member.mention
-	channel = client.get_channel(int(main_entry_channel))
+	channel = member.guild.system_channel
 	if channel:
 		await channel.send(pickGreeting(username))
 
 @client.event
 async def on_ready():
-	await command_tree.sync()
+	try:
+		await command_tree.sync()
+		print("Command tree synced globally.")
+	except discord.HTTPException as e:
+		print(f"Failed to sync command tree: {e}")
+		logging.error("Failed to sync command tree: %s", e)
 	bot_activity = discord.Game(name="with reality")
 	await client.change_presence(activity=bot_activity, status=discord.Status.online)
 	channel = client.get_channel(int(main_entry_channel))
@@ -62,6 +61,27 @@ async def on_ready():
 		print(f"Channel not found: {int(main_entry_channel)}\n{channel}")
 	print('Connected to bot: {}'.format(client.user.name))
 	print('Bot ID: {}'.format(client.user.id))
+
+@client.event
+async def on_user_update(before:discord.User, after:discord.User):
+	if before.avatar != after.avatar or before.display_avatar != after.display_avatar:
+		channel = after.mutual_guilds[0].system_channel
+		if channel:
+			await channel.send(pickRandomAvatarCompliment(after.mention))
+		else:
+			logging.error("Mutual Channel not found")
+			print(f"Mutual Channel not found")
+
+@client.event
+async def on_member_update(before:discord.Member, after:discord.Member):
+	if before.avatar != after.avatar or before.display_avatar != after.display_avatar:
+		channel = after.guild.system_channel
+		if channel:
+			await channel.send(pickRandomAvatarCompliment(after.mention))
+		else:
+			logging.error("Mutual Channel not found")
+			print(f"Mutual Channel not found")
+	
 
 #
 #Commands
@@ -94,7 +114,7 @@ async def info(interaction: discord.Interaction):
 @command_tree.command(name="good_bot",description="Tell the bot it's a good bot.")
 async def good_bot(interaction: discord.Interaction):
 	username = interaction.user.mention
-	await interaction.response.send_message(content=goodBot(username))
+	await interaction.response.send_message(content=pickRandomGoodBotResponse(username))
 
 #Runs the bot		
 client.run(TOKEN)
