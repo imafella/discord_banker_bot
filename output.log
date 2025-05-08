@@ -1,5 +1,2 @@
-2025-05-05 08:21:39,550:INFO:logging in using static token
-2025-05-05 08:21:40,333:INFO:Shard ID None has connected to Gateway (Session ID: 4db05e036b3d65a140d81053c825ac6a).
-2025-05-05 09:12:01,487:INFO:Shard ID None has successfully RESUMED session 4db05e036b3d65a140d81053c825ac6a.
-2025-05-05 13:10:09,036:INFO:Shard ID None has successfully RESUMED session 4db05e036b3d65a140d81053c825ac6a.
-2025-05-05 15:25:17,464:INFO:Shard ID None has successfully RESUMED session 4db05e036b3d65a140d81053c825ac6a.
+2025-05-07 23:55:24,514:INFO:logging in using static token
+2025-05-07 23:55:25,536:INFO:Shard ID None has connected to Gateway (Session ID: fc9c8ef693646a87ac34d3c49b521fbe).

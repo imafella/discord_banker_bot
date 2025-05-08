@@ -5,6 +5,7 @@ avatar_compliment_config = utility.load_config("AvatarCompliments")
 goodbot_replies_config = utility.load_config("GoodBotReplies")
 tsudre_replies_config = utility.load_config("TsundreMentions")
 crit_replies_config = utility.load_config("MaxRollResponses")
+bank_messages_config = utility.load_config("bank_messages")
 
 def roll(max:int=10):
 	return random.randint(1,max)
@@ -44,6 +45,32 @@ def pickRandomTsundreResponse(username):
 def pickRandomCritResponse(username):
 	return pickRandomResponse(username=username, config=crit_replies_config, fail_msg="Your crit broke me.")
 
+def pickRandomBankWelcomeResponse(username:str, currency_name:str, currency_symbol:str, bank_balance:float):
+	response = pickRandomResponse(username=None, config=bank_messages_config["welcome_to_bank"], fail_msg="I broke myself trying to help you join the bank.")
+	return replace_bank_tags(message=response, user_mention=username, bank_balance=bank_balance, currency_name=currency_name, currency_symbol=currency_symbol)
+
+def pickRandomYouAlreadyHaveAnAccountResponse(username:str, currency_name:str, currency_symbol:str, bank_balance:float):
+	response = pickRandomResponse(username=None, config=bank_messages_config["already_have_account"], fail_msg="I broke myself.")
+	return replace_bank_tags(message=response, user_mention=username, bank_balance=bank_balance, currency_name=currency_name, currency_symbol=currency_symbol)
+
+def pickRandomYouDontHaveAnAccountResponse(username:str, currency_name:str, currency_symbol:str):
+	response = pickRandomResponse(username=None, config=bank_messages_config["doesnt_have_account"], fail_msg="I broke myself.")
+	return replace_bank_tags(message=response, user_mention=username, bank_balance=0, currency_name=currency_name, currency_symbol=currency_symbol)
+
+def pickRandomLeavingTheBankResponse(username:str, currency_name:str, currency_symbol:str, bank_balance:float):
+	response = pickRandomResponse(username=None, config=bank_messages_config["leaving_bank"], fail_msg="I broke myself kicking you out of the bank.")
+	return replace_bank_tags(message=response, user_mention=username, bank_balance=bank_balance, currency_name=currency_name, currency_symbol=currency_symbol)
+
+def pickRandomBankBalanceResponse(username:str, bank_balance:float, currency_name:str, currency_symbol:str):
+	# Pick a random bank balance response from the list
+	response = pickRandomResponse(username=None, config=bank_messages_config["balance_messages"], fail_msg="I broke myself trying to help you with your bank balance.")
+	return replace_bank_tags(message=response, user_mention=username, bank_balance=bank_balance, currency_name=currency_name, currency_symbol=currency_symbol)
+
+def pickRandomChangeCostResponse(username:str, currency_name:str, currency_symbol:str, name_cost:float, symbol_cost:float):
+	# Pick a random bank balance response from the list
+	response = pickRandomResponse(username=None, config=bank_messages_config["change_cost_messages"], fail_msg="I broke myself trying to help you with your costs.")
+	return replace_bank_tags(message=response, user_mention=username, currency_name=currency_name, currency_symbol=currency_symbol, name_cost=name_cost, symbol_cost=symbol_cost)
+
 def pickRandomResponse(username:str, config:dict, fail_msg:str = "I broke myself trying to respond to you."):
 	total = len(config)
 	number = roll(total)
@@ -54,6 +81,8 @@ def pickResponse(username:str, config:dict, number:int = 1, fail_msg:str = "I br
 	total = len(config)
 	if number > total:
 		number = total
+	if username is None:
+		return f"{config.get(str(number), fail_msg)}"
 	return f"{username}, {config.get(str(number), fail_msg)}"
 
 def giveInfo():
@@ -71,3 +100,8 @@ def tblFlip():
 		return "┻━┻ ︵╰(°□°╰)"
 	if (table == 5):
 		return "┻━┻ ︵╰(°□°)╯︵ ┻━┻"
+	
+def replace_bank_tags(message:str, user_mention:str, currency_name:str, currency_symbol:str, bank_balance:float=0, name_cost:float=0, symbol_cost:float=0) -> str:
+	# Replace the tags in the message with the user's mention and bank balance
+	
+	return message.replace("[USER]", user_mention).replace("[BANK_BALANCE]", str(bank_balance)).replace("[CURRENCY_NAME]", currency_name).replace("[CURRENCY_SYMBOL]", currency_symbol).replace("[CURRENCY_NAME_CHANGE_COST]",str(name_cost)).replace("[CURRENCY_SYMBOL_CHANGE_COST]", str(symbol_cost))
