@@ -1,4 +1,4 @@
-import discord
+import discord, asyncio
 import logging
 import os, traceback
 from dotenv import load_dotenv
@@ -28,6 +28,19 @@ logging.basicConfig(
 command_tree = discord.app_commands.CommandTree(client)
 
 #
+# Timed things
+#
+
+async def change_presense_periodically():
+	await client.wait_until_ready()
+	while not client.is_closed():
+		bot_activity = discord.Game(name=pickRandomActivity())
+		await client.change_presence(activity=bot_activity, status=discord.Status.online)
+		print(f"Changed presence to: Playing{bot_activity.name}")
+		await asyncio.sleep(13 * 60 * 60)  # Change every 13 hours
+
+
+#
 #Events
 #
 
@@ -53,8 +66,12 @@ async def on_ready():
 	except discord.HTTPException as e:
 		print(f"Failed to sync command tree: {e}")
 		logging.error("Failed to sync command tree: %s", e)
-	bot_activity = discord.Game(name="with reality")
-	await client.change_presence(activity=bot_activity, status=discord.Status.online)
+
+	# bot_activity = discord.Game(name=pickRandomActivity())
+	# await client.change_presence(activity=bot_activity, status=discord.Status.online)
+
+	client.loop.create_task(change_presense_periodically())
+
 	channel = client.get_channel(int(main_entry_channel))
 	# Send a message to the channel when the bot is ready
 	if channel:
@@ -126,9 +143,13 @@ async def good_bot(interaction: discord.Interaction):
 
 @command_tree.command(name="join_bank",description="Make a bank account. Join the server bank. One of us.")
 async def join_bank(interaction: discord.Interaction):
+
+	# Acknowledge the interaction immediately
+	await interaction.response.defer()
+
 	username = interaction.user.id
 	if interaction.guild is None:
-		await interaction.response.send_message(content="You need to be in a server to join the bank.")
+		await interaction.followup.send(content="You need to be in a server to join the bank.")
 		return
 	guild_id = interaction.guild.id
 
@@ -141,7 +162,7 @@ async def join_bank(interaction: discord.Interaction):
 	# Check if the user is already in the bank
 	if database.is_user_in_guild_bank(username, guild_id):
 		bank_account = database.get_user_bank_account_details(user_id=username, guild_id=guild_id)
-		await interaction.response.send_message(content=pickRandomYouAlreadyHaveAnAccountResponse(username=interaction.user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3], bank_balance=bank_account[3]))
+		await interaction.followup.send(content=pickRandomYouAlreadyHaveAnAccountResponse(username=interaction.user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3], bank_balance=bank_account[3]))
 		return
 	
 	if database.is_user_bank_account_archived(username, guild_id):
@@ -149,13 +170,13 @@ async def join_bank(interaction: discord.Interaction):
 	else:
 		did_the_thing = database.add_user_to_guild_bank(user_id=username, guild_id=guild_id)
 	if not did_the_thing:
-		await interaction.response.send_message(content="I broke myself trying to add you to the bank.")
+		await interaction.followup.send(content="I broke myself trying to add you to the bank.")
 		return
 	
 	bank_account = database.get_user_bank_account_details(user_id=username, guild_id=guild_id)
 	
 	
-	await interaction.response.send_message(content=pickRandomBankWelcomeResponse(username=interaction.user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3], bank_balance=bank_account[3]))
+	await interaction.followup.send(content=pickRandomBankWelcomeResponse(username=interaction.user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3], bank_balance=bank_account[3]))
 	return
 
 

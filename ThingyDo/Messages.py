@@ -6,6 +6,7 @@ goodbot_replies_config = utility.load_config("GoodBotReplies")
 tsudre_replies_config = utility.load_config("TsundreMentions")
 crit_replies_config = utility.load_config("MaxRollResponses")
 bank_messages_config = utility.load_config("bank_messages")
+activities_config = utility.load_config("Activities")
 
 def roll(max:int=10):
 	return random.randint(1,max)
@@ -70,6 +71,10 @@ def pickRandomChangeCostResponse(username:str, currency_name:str, currency_symbo
 	# Pick a random bank balance response from the list
 	response = pickRandomResponse(username=None, config=bank_messages_config["change_cost_messages"], fail_msg="I broke myself trying to help you with your costs.")
 	return replace_bank_tags(message=response, user_mention=username, currency_name=currency_name, currency_symbol=currency_symbol, name_cost=name_cost, symbol_cost=symbol_cost)
+
+def pickRandomActivity():
+	# Pick a random activity response from the list
+	return pickRandomResponse(username=None, config=activities_config, fail_msg="I broke myself trying to pick an activity.")
 
 def pickRandomResponse(username:str, config:dict, fail_msg:str = "I broke myself trying to respond to you."):
 	total = len(config)

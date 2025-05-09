@@ -5,3 +5,4 @@ output.log
 discord_bot.db
 *.db
 *.log
+discord_bot.db
