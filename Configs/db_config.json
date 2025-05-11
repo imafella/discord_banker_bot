@@ -22,7 +22,8 @@
         "update_guild_currency_symbol":"UPDATE guild_currencies SET currency_symbol = ? WHERE guild_id = ?",
         "update_guild_currency_name_change_cost":"UPDATE guild_currency_change_costs SET currency_name_cost = ? where guild_id = ?",
         "update_guild_currency_symbol_change_cost":"UPDATE guild_currency_change_costs SET currency_symbol_cost = ? where guild_id = ?",
-        "update_user_bank_balance":"UPDATE guild_bank SET balance = ? WHERE guild_id = ? AND user_id = ? AND archived = 0"
+        "update_user_bank_balance":"UPDATE guild_bank SET balance = ? WHERE guild_id = ? AND user_id = ? AND archived = 0",
+        "update_user_bank_balance_simple":"UPDATE guild_bank SET balance = balance - ? WHERE guild_id = ? AND user_id = ? and archived = 0"
     },
 
     "select":{

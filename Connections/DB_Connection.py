@@ -230,3 +230,21 @@ class DatabaseConnection:
         self.connection.commit()
         self.close()
         return True
+    
+    def transfer_money(self, guild_id:int, sender_user_id:int, receiver_user_id:int, amount:float) -> bool:
+        """
+        Transfer money from a user's bank account to the guild bank.
+        :param guild_id: The ID of the guild to transfer money to.
+        :param user_id: The ID of the user to transfer money from.
+        :param amount: The amount of money to transfer.
+        :return: True if the transfer was successful, False otherwise.
+        """
+        # Connect to the database
+        self.connect()
+
+        # Transfer money
+        self.cursor.execute(self.config["update"]["update_user_bank_balance_simple"], ((amount), guild_id, sender_user_id, ))
+        self.cursor.execute(self.config["update"]["update_guild_bank_balance"], ((-amount), guild_id, receiver_user_id,))
+        self.connection.commit()
+        self.close()
+        return True

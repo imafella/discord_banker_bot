@@ -336,6 +336,46 @@ async def change_currency_symbol(interaction: discord.Interaction, new_currency_
 	await interaction.response.send_message(content=f"Changed the currency symbol to {new_currency_symbol}.")
 
 #TODO transfer_money
+@command_tree.command(name="transfer_money",description="Transfer money to another user.")
+async def transfer_money(interaction: discord.Interaction, user:discord.User, amount:float):
+	if interaction.guild is None:
+		await interaction.response.send_message(content="You need to be in a server to transfer money.")
+		return
+	guild_id = interaction.guild.id
+	user_id=interaction.user.id
+
+	# Check if the guild has its own bank
+	if not database.is_guild_bank_setup(guild_id=guild_id):
+		database.set_up_guild_bank(guild_id=guild_id)
+
+	guild_currency = database.get_guild_currency_details(guild_id=guild_id)
+
+	# Check if the user is already in the bank
+	if not database.is_user_in_guild_bank(user_id=user_id, guild_id=guild_id):
+		await interaction.response.send_message(content=pickRandomYouDontHaveAnAccountResponse(username=interaction.user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3]))
+		return
+	
+	# Check is target user is in the bank
+	if not database.is_user_in_guild_bank(user.id, guild_id=guild_id):
+		await interaction.response.send_message(content=pickRandomYouDontHaveAnAccountResponse(username=user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3]))
+		return
+	
+	bank_account = database.get_user_bank_account_details(user_id=user_id, guild_id=guild_id)
+	if bank_account is None:
+		await interaction.response.send_message(content="I broke myself trying to get your bank balance.")
+		return
+	
+	if bank_account[3] < amount:
+		#TODO pickRandomYouDontHaveEnoughMoneyResponse
+		await interaction.response.send_message(content="You don't have enough money to transfer.")
+		return
+	
+	did_the_thing = database.transfer_money(guild_id=guild_id, sender_user_id=user_id, receiver_user_id=user.id, amount=amount)
+	if not did_the_thing:
+		await interaction.response.send_message(content="I broke myself trying to transfer money.")
+		return
+	#TODO pickRandomTransferMoneyResponse
+	await interaction.response.send_message(content=f"Transferred {amount} {guild_currency[3]}s from {interaction.user.mention} to {user.mention}.")
 #TODO give_allowance. weekly increase balance if member has used imabot (not banking functions) in the last week
 # Papa's user_id is 259431114286956544 so be kind to him.
 
