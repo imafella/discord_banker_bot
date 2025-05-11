@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 discord = "*"
 dotenv = "*"
+asyncio = "*"
+debugpy = "*"
 
 [dev-packages]
 

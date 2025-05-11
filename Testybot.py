@@ -13,8 +13,6 @@ from Connections.DB_Connection import DatabaseConnection
 intents = discord.Intents.all()
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
-GUILD_ID = os.getenv("DISCORD_GUILD")
-main_entry_channel = os.getenv("DISCORD_MAIN_ENTRY_CHANNEL")
 database = DatabaseConnection("discord_bot.db")
 
 client = discord.Client(intents=intents)
@@ -72,14 +70,7 @@ async def on_ready():
 
 	client.loop.create_task(change_presense_periodically())
 
-	channel = client.get_channel(int(main_entry_channel))
-	# Send a message to the channel when the bot is ready
-	if channel:
-		# await channel.send("Hello, I am online!")
-		print("Hello, I am online!")
-	else:
-		logging.error("Channel not found: %s", int(main_entry_channel))
-		print(f"Channel not found: {int(main_entry_channel)}\n{channel}")
+	print("Hello, I am online!")
 	print('Connected to bot: {}'.format(client.user.name))
 	print('Bot ID: {}'.format(client.user.id))
 

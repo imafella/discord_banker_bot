@@ -1,4 +1,6 @@
 {
     "python.terminal.shellIntegration.enabled": true,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "python.pipenvPath": "/home/imafella/Documents/Development/discord_banker_bot/.venv/bin/python",
+    "python.pythonPath": "/home/imafella/Documents/Development/discord_banker_bot/.venv/bin/python"
 }

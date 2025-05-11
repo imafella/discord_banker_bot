@@ -9,8 +9,9 @@
             "name": "Python Debugger: Current File",
             "type": "debugpy",
             "request": "launch",
-            "program": "/home/imafella/Coding Projects/discord_banker_bot/Testybot.py",
-            "console": "integratedTerminal"
+            "program": "/home/imafella/Documents/Development/discord_banker_bot/Testybot.py",
+            "console": "integratedTerminal",
+            "python": "/home/imafella/Documents/Development/discord_banker_bot/.venv/bin/python"
         }
     ]
 }
