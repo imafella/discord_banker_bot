@@ -91,7 +91,9 @@ def pickResponse(username:str, config:dict, number:int = 1, fail_msg:str = "I br
 	return f"{username}, {config.get(str(number), fail_msg)}"
 
 def giveInfo():
-	output= "Hello,\nImabot. I do things that imafella and other discord users tells me to. Please don't talk to me."
+	output= "Hello,\nImabot. I do things that imafella and other discord users tells me to. Please don't talk to me.\n\n"
+	output+= "I can do the following things:\n\n"
+	output+= "roll - Roll a die. XdY + Z\nyell - Yell something.\ntest - this is for testing. Leave it alone.\nflip - Flips the table\ninfo - Info about the bot.\ngood_bot - Tell the bot it's a good bot.\njoin_bank - Make a bank account. Join the server bank. One of us.\nbank_balance - Get your bank balance.\nleave_bank - Close your bank account.\nget_change_costs - Get the costs of changing the currency name and symbol.\nchange_currency_name - Change the currency name.\nchange_currency_symbol - Change the currency symbol.\ntransfer_money - Transfer money to another user.\naward - Award money to a user.\nset_bank_balance - Set the bank balance of a user.\nget_currency_details - Get the currency details."
 	return output
 
 def shout(username):

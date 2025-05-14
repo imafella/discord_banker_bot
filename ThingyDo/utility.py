@@ -1,4 +1,5 @@
-import json, os
+import json, os, random
+from datetime import datetime, timedelta
 
 def load_config(name) -> dict:
     """
@@ -14,3 +15,64 @@ def load_config(name) -> dict:
         raise FileNotFoundError(f"Configuration file {name} not found in {path}.")
     with open(file_name_and_path,'r') as f:
         return json.load(f)
+    
+def load_random_avatar() -> bytes:
+    """
+    Load a random avatar from the avatars directory.
+    """
+    path = os.path.abspath(os.getenv('AVATAR_PATH'))
+    files = os.listdir(path)
+
+    if not files:
+        raise FileNotFoundError("No avatar files found in the Avatars directory.")
+
+    file = ""
+    while file == "" or not file.endswith(('.png', '.jpg', '.jpeg')):
+        file = random.choice(files)
+    
+    
+    
+    random_file = os.path.join(path, file)
+    
+    with open(random_file, 'rb') as f:
+        return f.read()
+
+def is_past_Allowance_Time():
+    # Get the current time
+    now = datetime.now()
+
+    # Check if today is Allowance Day
+    if is_Allowance_Day(): 
+        hour = int(os.getenv('ALLOWANCE_TIME', "10"))
+        Allowance_time = now.replace(hour=hour, minute=0, second=0, microsecond=0)
+        # Check if the current time is later than 10 AM
+        return now > Allowance_time
+
+    # Return False for all other days
+    return False
+
+def is_Allowance_Day():
+    # Get the current time
+    now = datetime.now()
+
+    # Check if today is Saturday
+    return now.weekday() == int(os.getenv('ALLOWANCE_DAY', "5"))  # Saturday is represented by 5
+    # Saturday is represented by 5
+
+def calculate_Allowance(allowance_info:dict) -> dict:
+    updated_allowance_info = {}
+    for account in allowance_info:
+        # Calculate the allowance for each account
+        guild_id = account['guild_id']
+        # user_id = account['user_id']
+        bot_usage = account['bot_usage']
+        if bot_usage > 0:
+            amount = 5.0 + 20.0*(1.0+(bot_usage/100))
+        else:
+            amount = 0.0
+        account['amount'] = amount
+        if str(guild_id) not in updated_allowance_info:
+            updated_allowance_info[str(guild_id)] = {}
+        updated_allowance_info[str(guild_id)].update(account)
+    
+    return updated_allowance_info

@@ -254,7 +254,7 @@
         "94": "You’ve been credited with [BANK_BALANCE] [CURRENCY_NAME]s, [USER]. Coin acquired.",
         "95": "[USER], your bank now holds [CURRENCY_SYMBOL][BANK_BALANCE]. Insert maniacal laugh here.",
         "96": "[BANK_BALANCE] [CURRENCY_NAME]s and counting. [USER], you’re on a roll!",
-        "97": "[USER], your balance is [BANK_BALANCE] [CURRENCY_NAME]s. Spoil yourself. Gently.",
+        "97": "[USER], your balance is [BANK_BALANCE] [CURRENCY_NAME]s. Soil yourself. Gently.",
         "98": "Balance: [CURRENCY_SYMBOL][BANK_BALANCE]. [USER], go forth and cause financial intrigue.",
         "99": "Confirmed: [USER] has [BANK_BALANCE] [CURRENCY_NAME]s. I hope you’re wearing your fancy socks.",
         "100": "[USER], your wallet contains [BANK_BALANCE] [CURRENCY_NAME]s. Go nuts (within reason)."

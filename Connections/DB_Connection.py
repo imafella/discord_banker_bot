@@ -244,7 +244,99 @@ class DatabaseConnection:
 
         # Transfer money
         self.cursor.execute(self.config["update"]["update_user_bank_balance_simple"], ((amount), guild_id, sender_user_id, ))
-        self.cursor.execute(self.config["update"]["update_guild_bank_balance"], ((-amount), guild_id, receiver_user_id,))
+        self.cursor.execute(self.config["update"]["update_user_bank_balance_simple"], ((-amount), guild_id, receiver_user_id,))
+        self.connection.commit()
+        self.close()
+        return True
+    
+    def award_money(self, guild_id:int, user_id:int, amount:float) -> bool:
+        """
+        Award money to a user's bank account.
+        :param guild_id: The ID of the guild to award money to.
+        :param user_id: The ID of the user to award money to.
+        :param amount: The amount of money to award.
+        :return: True if the award was successful, False otherwise.
+        """
+        # Connect to the database
+        self.connect()
+
+        # Award money
+        self.cursor.execute(self.config["update"]["update_user_bank_balance_simple"], ((-amount), guild_id, user_id, ))
+        self.connection.commit()
+        self.close()
+        return True
+    
+    def set_bank_balance(self, guild_id:int, user_id:int, amount:float) -> bool:
+        """
+        Set the bank balance for a given user ID.
+        :param guild_id: The ID of the guild to set the bank balance for.
+        :param user_id: The ID of the user to set the bank balance for.
+        :param amount: The amount to set the bank balance to.
+        :return: True if the bank balance was set successfully, False otherwise.
+        """
+        # Connect to the database
+        self.connect()
+
+        # Set the bank balance
+        self.cursor.execute(self.config["update"]["update_user_bank_balance"], (amount, guild_id, user_id, ))
+        self.connection.commit()
+        self.close()
+        return True
+    
+    def get_allowance_info(self) -> dict:
+        """
+        Manage the allowance for all users in the guild bank.
+        :return: A list of users who received their allowance.
+        """
+        # Connect to the database
+        self.connect()
+        allowance_list = {}
+
+        # Get the list of users who received their allowance
+        self.cursor.execute(self.config["select"]["select_users_for_allowance"])
+        result = self.cursor.fetchall()
+        for row in result:
+            guild_id =  row[0]
+            user_id = row[1]
+            bot_usage = row[2]
+            allowance_list.update({"guild_id": guild_id, "user_id": user_id, "bot_usage": bot_usage})
+        self.close()
+        return allowance_list
+
+    def give_allowance(self, allowance_info:dict) -> bool:
+        """
+        Give allowance to a user.
+        :param guild_id: The ID of the guild to give allowance to.
+        :param user_id: The ID of the user to give allowance to.
+        :param amount: The amount of allowance to give.
+        :return: True if the allowance was given successfully, False otherwise.
+        """
+        # Connect to the database
+        self.connect()
+
+        for allowance in allowance_info:
+            guild_id = allowance["guild_id"]
+            user_id = allowance["user_id"]
+            amount = float(allowance["amount"])
+            # Give allowance
+            self.cursor.execute(self.config["update"]["update_user_bank_balance_simple"], ((-amount), guild_id, user_id, ))
+        self.cursor.execute(self.config["update"]["update_reset_bot_use"])
+        self.connection.commit()
+        self.close()
+        return True
+    
+    def incriment_bot_usage(self, guild_id:int, user_id:int) -> bool:
+        """
+        Increment the bot usage for a given user ID.
+        :param guild_id: The ID of the guild to increment the bot usage for.
+        :param user_id: The ID of the user to increment the bot usage for.
+        :return: True if the bot usage was incremented successfully, False otherwise.
+        """
+        # Connect to the database
+        self.connect()
+
+        # Increment the bot usage
+        self.cursor.execute(self.config["update"]["update_increment_bot_use"], (guild_id, user_id, ))
         self.connection.commit()
         self.close()
         return True
