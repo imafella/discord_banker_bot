@@ -9,7 +9,7 @@ def load_config(name) -> dict:
     name = f"{name}.json"
     
     file_name_and_path = os.path.join(path, name)
-    print(f"Looking for config file at: {file_name_and_path}")  # Debugging
+    # print(f"Looking for config file at: {file_name_and_path}")  # Debugging
 
     if not os.path.exists(file_name_and_path):
         raise FileNotFoundError(f"Configuration file {name} not found in {path}.")
@@ -56,23 +56,29 @@ def is_Allowance_Day():
     now = datetime.now()
 
     # Check if today is Saturday
-    return now.weekday() == int(os.getenv('ALLOWANCE_DAY', "5"))  # Saturday is represented by 5
-    # Saturday is represented by 5
+    return now.weekday() == int(os.getenv('ALLOWANCE_DAY', "0"))  # Monday is 0
 
-def calculate_Allowance(allowance_info:dict) -> dict:
+def calculate_Allowance(allowance_info:list) -> dict:
+    '''
+    Expected dict of dicts. Each sub dict has the following
+    keys:
+        - guild_id
+        - user_id
+        - bot_usage
+    '''
     updated_allowance_info = {}
     for account in allowance_info:
         # Calculate the allowance for each account
         guild_id = account['guild_id']
         # user_id = account['user_id']
         bot_usage = account['bot_usage']
+        amount = 5.0
         if bot_usage > 0:
-            amount = 5.0 + 20.0*(1.0+(bot_usage/100))
-        else:
-            amount = 0.0
+            amount += 20.0*(1.0+(bot_usage/100))
+        
         account['amount'] = amount
         if str(guild_id) not in updated_allowance_info:
-            updated_allowance_info[str(guild_id)] = {}
-        updated_allowance_info[str(guild_id)].update(account)
+            updated_allowance_info[str(guild_id)] = []
+        updated_allowance_info[str(guild_id)].append(account)
     
     return updated_allowance_info

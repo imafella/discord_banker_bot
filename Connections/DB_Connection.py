@@ -290,7 +290,7 @@ class DatabaseConnection:
         """
         # Connect to the database
         self.connect()
-        allowance_list = {}
+        allowance_list = []
 
         # Get the list of users who received their allowance
         self.cursor.execute(self.config["select"]["select_users_for_allowance"])
@@ -299,7 +299,7 @@ class DatabaseConnection:
             guild_id =  row[0]
             user_id = row[1]
             bot_usage = row[2]
-            allowance_list.update({"guild_id": guild_id, "user_id": user_id, "bot_usage": bot_usage})
+            allowance_list.append({"guild_id": guild_id, "user_id": user_id, "bot_usage": bot_usage})
         self.close()
         return allowance_list
 
@@ -337,6 +337,69 @@ class DatabaseConnection:
 
         # Increment the bot usage
         self.cursor.execute(self.config["update"]["update_increment_bot_use"], (guild_id, user_id, ))
+        self.connection.commit()
+        self.close()
+        return True
+    
+    def set_up_roulette_tables(self) -> bool:
+        """
+        Set up the roulette table.
+        :return: True if the roulette table was set up successfully, False otherwise.
+        """
+        # Connect to the database
+        self.connect()
+
+        # Set up the roulette table
+        self.cursor.execute(self.config["create"]["create_table_live_guild_roulette"])
+        self.cursor.execute(self.config["create"]["create_table_roulette_bets"])
+        self.connection.commit()
+        self.close()
+        return True
+    
+    def isRouletteOn(self, guild_id:int) -> bool:
+        """
+        Check if roulette is on for the given guild.
+        :param guild_id: The ID of the guild to check.
+        :return: True if roulette is on, False otherwise.
+        """
+        # Connect to the database
+        self.connect()
+
+        # Check if roulette is on
+        self.cursor.execute(self.config["select"]["select_is_roulette_live"], (guild_id,))
+        result = self.cursor.fetchone()
+        self.close()
+        return result[0] == 1
+    
+    def insert_roulette_table(self, guild_id:int) -> bool:
+        """
+        Insert a new roulette table for the given guild ID.
+        :param guild_id: The ID of the guild to insert the roulette table for.
+        :return: True if the roulette table was inserted successfully, False otherwise.
+        """
+        # Connect to the database
+        self.connect()
+
+        # Insert the roulette table
+        self.cursor.execute(self.config["insert"]["live_guild_roulette"], (guild_id,0))
+        self.connection.commit()
+        self.close()
+        return True
+    
+    def place_roulette_bet(self, guild_id:int, user_id:int, bet_amount:float, bet_type:str, bet_details:str) -> bool:
+        """
+        Place a bet on the roulette table.
+        :param guild_id: The ID of the guild to place the bet in.
+        :param user_id: The ID of the user placing the bet.
+        :param bet_amount: The amount of the bet.
+        :param bet_type: The type of bet (e.g., "red", "black", "number").
+        :return: True if the bet was placed successfully, False otherwise.
+        """
+        # Connect to the database
+        self.connect()
+
+        # Place the bet
+        self.cursor.execute(self.config["insert"]["insert_place_roulette_bet"], (guild_id, user_id, bet_amount, bet_type, bet_details))
         self.connection.commit()
         self.close()
         return True

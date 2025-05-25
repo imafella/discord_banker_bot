@@ -3,7 +3,9 @@
         "create_table_guilds":"CREATE TABLE IF NOT EXISTS guilds (id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id integer NOT NULL, guild_name TEXT NOT NULL, UNIQUE(id, guild_id))",
         "create_table_bank_accounts":"CREATE TABLE IF NOT EXISTS guild_bank (id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id integer NOT NULL, user_id integer NOT NULL, balance real DEFAULT 0, bot_use integer not null DEFAULT 0, archived integer not null DEFAULT 0, UNIQUE(id, guild_id, user_id))",
         "create_table_guild_currencies":"CREATE TABLE IF NOT EXISTS guild_currencies (id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id integer NOT NULL, currency_name TEXT NOT NULL, currency_symbol TEXT NOT NULL, UNIQUE(id, guild_id))",
-        "create_table_guild_currency_change_costs":"CREATE TABLE IF NOT EXISTS guild_currency_change_costs (id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id integer NOT NULL, currency_name_cost real DEFAULT 1.00, currency_symbol_cost real DEFAULT 1.00, UNIQUE(id, guild_id))"
+        "create_table_guild_currency_change_costs":"CREATE TABLE IF NOT EXISTS guild_currency_change_costs (id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id integer NOT NULL, currency_name_cost real DEFAULT 1.00, currency_symbol_cost real DEFAULT 1.00, UNIQUE(id, guild_id))",
+        "create_table_live_guild_roulette":"create table if not exists live_guild_roulette (id integer primary key autoincrement, guild_id integer not null,isLive integer not null DEFAULT 0, UNIQUE(id, guild_id))",
+        "create_table_roulette_bets":"create table if not exists roulette_bets (id integer primary key autoincrement, guild_id integer not null, user_id integer not null, bet_amount real not null, bet_type text not null, bet_type_details text not null,UNIQUE(id, guild_id, user_id))"
     
     },
 
@@ -11,7 +13,9 @@
         "insert_guild_currency":"INSERT INTO guild_currencies (guild_id, currency_name, currency_symbol) VALUES (?, 'Dollery-Doo', 'Þ')",
         "insert_guild_currency_change_cost": "INSERT INTO guild_currency_change_costs (guild_id, currency_name_cost, currency_symbol_cost) VALUES (?, 1, 1)",
         "insert_user_into_guild_bank":"INSERT INTO guild_bank (guild_id, user_id, balance) VALUES (?, ?, ?)",
-        "insert_guild_into_guilds":"INSERT INTO guilds (guild_id, guild_name) VALUES (?, ?)"
+        "insert_guild_into_guilds":"INSERT INTO guilds (guild_id, guild_name) VALUES (?, ?)",
+        "insert_roulette":"INSERT INTO live_guild_roulette (guild_id, isLive) VALUES (?, ?)",
+        "insert_place_roulette_bet":"INSERT INTO roulette_bets (guild_id, user_id, bet_amount, bet_type, bet_type_details) VALUES (?, ?, ?, ?, ?)"
     },
 
     "update":{
@@ -26,7 +30,9 @@
         "update_user_bank_balance_simple":"UPDATE guild_bank SET balance = balance - ? WHERE guild_id = ? AND user_id = ? and archived = 0",
         "update_set_user_bank_balance":"UPDATE guild_bank SET balance = ? WHERE guild_id = ? AND user_id = ? and archived = 0",
         "update_increment_bot_use":"UPDATE guild_bank SET bot_use = bot_use + 1 WHERE guild_id = ? AND user_id = ? and archived = 0",
-        "update_reset_bot_use":"UPDATE guild_bank SET bot_use = 0 WHERE archived = 0"
+        "update_reset_bot_use":"UPDATE guild_bank SET bot_use = 0 WHERE archived = 0",
+        "update_make_live_routlette":"UPDATE live_guild_roulette SET isLive = 1 WHERE guild_id = ?",
+        "update_make_not_live_routlette":"UPDATE live_guild_roulette SET isLive = 0 WHERE guild_id = ?"
     },
 
     "select":{
@@ -35,10 +41,15 @@
         "select_currency_details":"SELECT * FROM guild_currencies WHERE guild_id = ?",
         "select_guild_details":"SELECT * FROM guilds WHERE guild_id = ?",
         "select_guild_currency_change_costs":"SELECT * FROM guild_currency_change_costs WHERE guild_id = ?",
-        "select_users_for_allowance":"SELECT guild_id, user_id, bot_use FROM guild_bank WHERE  bot_use > 0 AND archived = 0"
+        "select_users_for_allowance":"SELECT guild_id, user_id, bot_use FROM guild_bank WHERE archived = 0",
+        "select_is_roulette_live":"SELECT isLive FROM live_guild_roulette WHERE guild_id = ?",
+        "select_guild_placed_roulette_bets":"SELECT * FROM roulette_bets WHERE guild_id = ?",
+        "select_user_placed_roulette_bets":"SELECT * FROM roulette_bets WHERE guild_id = ? AND user_id = ?"
     },
 
-    "delete":{}
+    "delete":{
+        "delete_stale_guild_roulette_bets":"DELETE FROM roulette_bets WHERE guild_id = ?"
+    }
     
     
     

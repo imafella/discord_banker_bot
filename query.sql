@@ -1,3 +1,1 @@
--- SQLite
-
-select * from guild_bank 
+select * from guild_bank
