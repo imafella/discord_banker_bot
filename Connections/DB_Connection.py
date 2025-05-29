@@ -341,52 +341,7 @@ class DatabaseConnection:
         self.close()
         return True
     
-    def set_up_roulette_tables(self) -> bool:
-        """
-        Set up the roulette table.
-        :return: True if the roulette table was set up successfully, False otherwise.
-        """
-        # Connect to the database
-        self.connect()
-
-        # Set up the roulette table
-        self.cursor.execute(self.config["create"]["create_table_live_guild_roulette"])
-        self.cursor.execute(self.config["create"]["create_table_roulette_bets"])
-        self.connection.commit()
-        self.close()
-        return True
-    
-    def isRouletteOn(self, guild_id:int) -> bool:
-        """
-        Check if roulette is on for the given guild.
-        :param guild_id: The ID of the guild to check.
-        :return: True if roulette is on, False otherwise.
-        """
-        # Connect to the database
-        self.connect()
-
-        # Check if roulette is on
-        self.cursor.execute(self.config["select"]["select_is_roulette_live"], (guild_id,))
-        result = self.cursor.fetchone()
-        self.close()
-        return result[0] == 1
-    
-    def insert_roulette_table(self, guild_id:int) -> bool:
-        """
-        Insert a new roulette table for the given guild ID.
-        :param guild_id: The ID of the guild to insert the roulette table for.
-        :return: True if the roulette table was inserted successfully, False otherwise.
-        """
-        # Connect to the database
-        self.connect()
-
-        # Insert the roulette table
-        self.cursor.execute(self.config["insert"]["live_guild_roulette"], (guild_id,0))
-        self.connection.commit()
-        self.close()
-        return True
-    
-    def place_roulette_bet(self, guild_id:int, user_id:int, bet_amount:float, bet_type:str, bet_details:str) -> bool:
+    def place_bet_roulette(self, guild_id:int, user_id:int, bet_amount:float, bet_type:str, bet_details:str, bet_input:str="0") -> bool:
         """
         Place a bet on the roulette table.
         :param guild_id: The ID of the guild to place the bet in.
@@ -399,7 +354,89 @@ class DatabaseConnection:
         self.connect()
 
         # Place the bet
-        self.cursor.execute(self.config["insert"]["insert_place_roulette_bet"], (guild_id, user_id, bet_amount, bet_type, bet_details))
+        self.cursor.execute(self.config["insert"]["insert_place_roulette_bet"], (guild_id, user_id, bet_amount, bet_type, bet_details, bet_input,))
         self.connection.commit()
         self.close()
+        return True
+    
+    def get_placed_guild_roulette_bets(self, guild_id:int):
+        '''
+        Returns list of dicts {id, user_id, amount, type, details, datetime}
+        '''
+        response = []
+        self.connect()
+        self.cursor.execute(self.config["select"]["select_placed_guild_roulette_bets"], (guild_id,))
+        result = self.cursor.fetchall()
+        for row in result:
+            bet = {}
+            bet['id'] = row[0]
+            bet['user_id'] = row[2]
+            bet['amount'] = row[3]
+            bet['type'] = row[4]
+            bet['details'] = row[5]
+            bet['datetime'] = row[7]
+            bet['input'] = row[9]
+            response.append(bet)
+        self.close()
+
+        return response
+    
+    def get_placed_guild_user_roulette_bets(self, guild_id:int, user_id:int):
+        '''
+        Returns list of dicts {id, user_id, amount, type, details, datetime, input}
+        '''
+        response = []
+        self.connect()
+        self.cursor.execute(self.config["select"]["select_active_user_roulette_bets"], (guild_id, user_id,))
+        result = self.cursor.fetchall()
+        for row in result:
+            bet = {}
+            bet['id'] = row[0]
+            bet['user_id'] = row[2]
+            bet['amount'] = row[3]
+            bet['type'] = row[4]
+            bet['details'] = row[5]
+            bet['datetime'] = row[7]
+            bet['input'] = row[9]
+            response.append(bet)
+        self.close()
+
+        return response
+    
+    def get_historic_guild_user_roulette_bets(self, guild_id:int, user_id:int):
+        '''
+        Returns list of dicts {id, user_id, amount, type, details, datetime}
+        '''
+        response = []
+        self.connect()
+        self.cursor.execute(self.config["select"]["select_historic_user_roulette_bets"], (guild_id, user_id,))
+        result = self.cursor.fetchall()
+        for row in result:
+            bet = {}
+            bet['id'] = row[0]
+            bet['user_id'] = row[2]
+            bet['amount'] = row[3]
+            bet['type'] = row[4]
+            bet['details'] = row[5]
+            bet['status'] = row[6]
+            bet['datetime'] = row[7]
+            bet['input'] = row[9]
+            response.append(bet)
+        self.close()
+
+        return response
+    
+    def set_guild_user_roulette_bet_results(self, guild_id:int, user_id:int, bet_id:int, bet_win:bool, amount:float, multiplier:int=0):
+
+        self.connect()
+        if bet_win:
+            self.cursor.execute(self.config["update"]["update_set_guild_roulette_bets_win_status"],(bet_id,))
+            self.cursor.execute(self.config["update"]["update_increase_user_bank_balance"], (amount*multiplier, guild_id, user_id,))
+        else:
+            self.cursor.execute(self.config["update"]["update_set_guild_roulette_bets_lose_status"],(bet_id,))
+            self.cursor.execute(self.config["update"]["update_decrease_user_bank_balance"], (amount, guild_id, user_id,))
+        
+        self.connection.commit()
+        self.close()
+        
         return True

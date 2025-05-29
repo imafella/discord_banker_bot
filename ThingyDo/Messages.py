@@ -126,6 +126,63 @@ def pickRandomAwardMoneyResponse(amount:float, guild_currency_name:str, guild_cu
 	
 	return response
 
+def pickRandomSelectionResponse( choice:str, username:str=None, fail_msg:str="I broke myself trying to respond to you."):
+	list = utility.load_config("StaticResponses")['random_selection_response']
+	return pickRandomResponseNew(list = list).replace(
+		'[choice]', 
+		choice).replace(
+			'[user]', 
+			username if username is not None else "Valued User") 
+
+def pickRandomRouletteBetResponse(username:str=None, amount:float=0, currency_name:str="", currency_symbol:str="", bet_type:str="", bet_details:str=""):
+	list = utility.load_config("StaticResponses")['roulette']['bet_placed']
+	return pickRandomResponseNew(list=list).replace(
+			"[user]",  
+			username if username is not None else "Valued User"
+		).replace(
+			"[amount]",
+			str(amount)
+		).replace(
+			"[currency_name]",
+			currency_name
+
+		).replace(
+			"[currency_symbol]",
+			currency_symbol
+		).replace(
+			"[bet_type]",
+			bet_type
+		).replace(
+			"[bet_details]",
+			bet_details
+		)
+
+def pickRandomRouletteNoAccountResponse(username:str=None):
+	list = utility.load_config("StaticResponses")['roulette']['no_bank_account_msg']
+	return pickRandomResponseNew(list=list).replace(
+			"[user]",  
+			username if username is not None else "Valued User"
+		)
+
+def pickRandomRouletteBetTooBigResponse(username:str=None, amount:float=0, currency_name:str="", currency_symbol:str="", bank_balance:float=0):
+	list = utility.load_config("StaticResponses")['roulette']['bet_too_big_msg']
+	return pickRandomResponseNew(list=list).replace(
+			"[user]",  
+			username if username is not None else "Valued User"
+		).replace(
+			"[amount]",
+			str(amount)
+		).replace(
+			"[currency_name]",
+			currency_name
+		).replace(
+			"[currency_symbol]",
+			currency_symbol
+		).replace(
+			"[bank_balance]",
+			str(bank_balance)
+		)
+	
 def pickRandomResponseNew(list:list, fail_msg:str = "I broke myself trying to respond to you.", username:str=None) -> str:
 	total = len(list)
 	number = roll(total)-1
@@ -182,3 +239,42 @@ def replace_bank_tags(message:str, user_mention:str, currency_name:str, currency
 	# Replace the tags in the message with the user's mention and bank balance
 	
 	return message.replace("[USER]", user_mention).replace("[BANK_BALANCE]", str(bank_balance)).replace("[CURRENCY_NAME]", currency_name).replace("[CURRENCY_SYMBOL]", currency_symbol).replace("[CURRENCY_NAME_CHANGE_COST]",str(name_cost)).replace("[CURRENCY_SYMBOL_CHANGE_COST]", str(symbol_cost)).replace('[AMOUNT]', str(amount))
+
+def detail_MAL_Anime_Response(mal_response:dict, username:str=None) -> str:
+	# Format the MAL anime response into a readable string
+	if not mal_response or 'id' not in mal_response:
+		return "I couldn't find any anime details."
+
+	data = mal_response
+	title = data.get('title', 'Unknown Title')
+	alt_title = data.get('alternative_titles', {}).get('en', 'No alternative title available.')
+	synopsis = data.get('synopsis', 'No synopsis available.')
+	synop_limit = 250
+	if len(synopsis) > synop_limit:
+		synopsis = synopsis[:synop_limit].rstrip() + '...'
+	score = data.get('mean', 'No score available.')
+	episodes = data.get('num_episodes', 'Unknown number of episodes.')
+	status = data.get('status', 'Unknown status.')
+	nsfw = data.get('nsfw', 'Unknown NSFW status.')
+	media_type = data.get('media_type', 'Unknown media type.')
+	start_date = data.get('start_date', 'Unknown start date.')
+	end_date = data.get('end_date', 'Unknown end date.')
+	genres = []
+	for genre in data.get('genres', {}):
+		genres.append(genre.get('name', 'Unknown genre'))
+
+	response = f"**Anime Details for {title}**\n"
+	if alt_title != title and alt_title != "":
+		response += f"**Alternative Title:** {alt_title}\n"
+	response += f"**Media Type:** {media_type}\n"
+	response += f"**Rating:** {score}/10\n"
+	# response += f"**Aired:** {start_date} to {end_date}\n"
+	response += f"**Episode Count:** {episodes}\n"
+	response += f"**Status:** {status}\n"
+	response += f"**Genres:** {', '.join(genres)}\n"
+	response += f"**NSFW Rating:** {nsfw}\n"
+	response += f"**Synopsis:** {synopsis}\n"
+
+	if username:
+		return f"Thanks {username}, here are the details:\n{response}"
+	return response

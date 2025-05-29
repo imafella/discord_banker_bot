@@ -236,19 +236,22 @@ class Bank(discord.app_commands.Group):
 
     #TODO transfer_money
     @discord.app_commands.command(name="transfer_money",description="Transfer money to another user.")
-    async def transfer_money(self, interaction: discord.Interaction, user:discord.User, amount:float):
+    async def transfer_money(self, interaction: discord.Interaction, user:discord.User, amount:float, reason:str=None):
+        # Acknowledge the interaction immediately
+        await interaction.response.defer()
+
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
         if interaction.guild is None:
-            await interaction.response.send_message(content="You need to be in a server to transfer money.")
+            await interaction.followup.send(content="You need to be in a server to transfer money.")
             return
         guild_id = interaction.guild.id
         user_id=interaction.user.id
 
         if amount < 0:
-            await interaction.response.send_message(content="You can't transfer a negative amount of money.")
+            await interaction.followup.send(content="You can't transfer a negative amount of money.")
             return
         if amount == 0:
-            await interaction.response.send_message(content="You can't transfer 0.")
+            await interaction.followup.send(content="You can't transfer 0.")
             return
 
         # Check if the guild has its own bank
@@ -259,31 +262,33 @@ class Bank(discord.app_commands.Group):
 
         # Check if the user is already in the bank
         if not self.database.is_user_in_guild_bank(user_id=user_id, guild_id=guild_id):
-            await interaction.response.send_message(content=pickRandomYouDontHaveAnAccountResponse(username=interaction.user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3]))
+            await interaction.followup.send(content=pickRandomYouDontHaveAnAccountResponse(username=interaction.user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3]))
             return
         
         # Check is target user is in the bank
         if not self.database.is_user_in_guild_bank(user.id, guild_id=guild_id):
-            await interaction.response.send_message(content=pickRandomYouDontHaveAnAccountResponse(username=user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3]))
+            await interaction.followup.send(content=pickRandomYouDontHaveAnAccountResponse(username=user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3]))
             return
         
         bank_account = self.database.get_user_bank_account_details(user_id=user_id, guild_id=guild_id)
         if bank_account is None:
-            await interaction.response.send_message(content="I broke myself trying to get your bank balance.")
+            await interaction.followup.send(content="I broke myself trying to get your bank balance.")
             return
         
         if bank_account[3] < amount:
             #TODO pickRandomYouDontHaveEnoughMoneyResponse
-            await interaction.response.send_message(content="You don't have enough money to transfer.")
+            await interaction.response.followup.send(content="You don't have enough money to transfer.")
             return
         
         did_the_thing = self.database.transfer_money(guild_id=guild_id, sender_user_id=user_id, receiver_user_id=user.id, amount=amount)
         if not did_the_thing:
-            await interaction.response.send_message(content="I broke myself trying to transfer money.")
+            await interaction.followup.send(content="I broke myself trying to transfer money.")
             return
         #TODO pickRandomTransferMoneyResponse
-        await interaction.response.send_message(content=f"Transferred {amount} {guild_currency[3]}s from {interaction.user.mention} to {user.mention}.")
-    #TODO give_allowance. weekly increase balance if member has used imabot (not banking functions) in the last week
+        msg = f"Transferred {amount} {guild_currency[2]}s from {interaction.user.mention} to {user.mention}."
+        if reason is not None:
+            msg+= f"\nReason: {reason}"
+        await interaction.followup.send(content=msg)
 
     @discord.app_commands.command(name="award",description="Award money to a user. Bank Admin Command.")
     async def award(self, interaction: discord.Interaction, user:discord.User, amount:float, reason:str=None):

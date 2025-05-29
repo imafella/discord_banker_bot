@@ -6,7 +6,9 @@ from dotenv import load_dotenv
 from ThingyDo.DieRoll import *
 from ThingyDo.Messages import *
 from Connections.DB_Connection import DatabaseConnection
+from Connections.malConnection import MALConnection
 from CommandTrees.Bank import Bank
+from CommandTrees import Roulette_Bet
 
 
 #
@@ -16,7 +18,10 @@ intents = discord.Intents.all()
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 admins = json.loads(os.getenv("ALLOWED_ADMINS","[]"))
+ignore_these_user_msgs = json.loads(os.getenv("ignore_user_msgs", "[]"))
+ignore_these_user_reactions = json.loads(os.getenv("ignore_user_reactions", "[]"))
 database = DatabaseConnection(os.getenv('DB_PATH'))
+mal_connection = MALConnection()
 has_given_allowance_today = False
 
 client = discord.Client(intents=intents)
@@ -30,6 +35,8 @@ logging.basicConfig(
 command_tree = discord.app_commands.CommandTree(client)
 bank = Bank()
 command_tree.add_command(bank)
+roulette = Roulette_Bet.Roulette()
+command_tree.add_command(roulette)
 
 
 async def get_guild_channel_by_name(guild:discord.Guild, channel_name:str):
@@ -64,6 +71,21 @@ async def has_sent_message_today(channel: discord.TextChannel, search_string: st
         ):
             return True
     return False
+
+async def get_anime_id(mal_url:str) -> int:
+	"""
+	Extract the anime ID from a MyAnimeList URL.
+	Example URLs:
+	- https://myanimelist.net/anime/205/Samurai_Champloo
+	- https://myanimelist.net/anime/205
+	"""
+	if "myanimelist.net/anime/" in mal_url:
+		try:
+			return int(mal_url.split("myanimelist.net/anime/")[1].split("/")[0].split(" ")[0])
+		except ValueError:
+			return None
+	else:
+		return None
 
 #
 # Timed things
@@ -213,7 +235,29 @@ async def on_message(message:discord.Message):
 	if client.user in message.mentions:
 		await message.channel.send(pickRandomBotMentionResponse(username=message.author.mention, fail_msg="I broke myself trying to respond to you."))
 	
+	if "http" in message.content and "myanimelist" in message.content:
+		# example https://myanimelist.net/anime/205/Samurai_Champloo or https://myanimelist.net/anime/205
+		anime_id = await get_anime_id(mal_url=message.content)
+		if anime_id is None:
+			return
+		mal_response = await mal_connection.get_anime_details(anime_id=anime_id)
+		await message.channel.send(detail_MAL_Anime_Response(mal_response=mal_response, username=message.author.mention))
 
+@client.event
+async def on_reaction_add(reaction:discord.Reaction, user:discord.User):
+	if user == client.user:
+		return
+	if user.id in ignore_these_user_reactions:
+		return
+	reaction_message = reaction.message
+	
+	if random.randint(1, 100) >= 75:
+		try:
+			await reaction_message.add_reaction(reaction.emoji)
+			print(f"Added reaction: {reaction.emoji.name} to message by user: {reaction_message.author.name}")
+		except Exception as e:
+			logging.error(f"Failed to add reaction: {e}")
+	return
 #
 #Commands
 #
@@ -269,6 +313,22 @@ async def good_bot(interaction: discord.Interaction):
 	database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
 	username = interaction.user.mention
 	await interaction.response.send_message(content=pickRandomGoodBotResponse(username))
+
+@command_tree.command(name="random_selection",description="give the bot a list of options seperated by commas, and it will pick one at random.")
+async def random_selection(interaction: discord.Interaction, options:str):
+	database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
+	username = interaction.user.mention
+	if options.strip() == "":
+		await interaction.response.send_message(content=f"{username}, you need to give me some options to choose from.")
+		return
+	
+	options_list = [option.strip() for option in options.split(",")]
+	if len(options_list) == 0:
+		await interaction.response.send_message(content=f"{username}, you need to give me some options to choose from.")
+		return
+	
+	selected_option = random.choice(options_list)
+	await interaction.response.send_message(content=f"Options: {str(options_list)}\n\n{pickRandomSelectionResponse(username=username, choice=selected_option)}")
 
 # #
 # #Banking commands

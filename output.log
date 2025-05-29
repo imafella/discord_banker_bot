@@ -1,8 +1,3 @@
-2025-05-24 19:51:35,495:INFO:logging in using static token
-2025-05-24 19:51:36,471:INFO:Shard ID None has connected to Gateway (Session ID: 3cb42dce087f7ab121935c0ff613f02b).
-2025-05-24 22:53:30,765:INFO:Shard ID None has successfully RESUMED session 3cb42dce087f7ab121935c0ff613f02b.
-2025-05-25 02:21:58,927:INFO:Shard ID None has successfully RESUMED session 3cb42dce087f7ab121935c0ff613f02b.
-2025-05-25 05:06:04,553:INFO:Shard ID None has successfully RESUMED session 3cb42dce087f7ab121935c0ff613f02b.
-2025-05-25 08:35:07,743:INFO:Shard ID None has successfully RESUMED session 3cb42dce087f7ab121935c0ff613f02b.
-2025-05-25 10:40:17,047:INFO:Shard ID None has successfully RESUMED session 3cb42dce087f7ab121935c0ff613f02b.
-2025-05-25 11:08:51,848:INFO:Shard ID None has successfully RESUMED session 3cb42dce087f7ab121935c0ff613f02b.
+2025-05-29 10:55:34,078:INFO:logging in using static token
+2025-05-29 10:55:34,946:INFO:Shard ID None has connected to Gateway (Session ID: 12e60f3570071da50354392f7f8599c4).
+2025-05-29 10:59:08,518:INFO:Shard ID None has successfully RESUMED session 12e60f3570071da50354392f7f8599c4.

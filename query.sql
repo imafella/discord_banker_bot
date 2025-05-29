@@ -1,1 +1,2 @@
-select * from guild_bank
+drop table guild_roulette_bets;
+CREATE TABLE IF NOT EXISTS guild_roulette_bets ( id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id INTEGER NOT NULL, user_id INTEGER NOT NULL, bet_amount REAL NOT NULL DEFAULT 0, bet_type TEXT NOT NULL, bet_details TEXT NOT NULL, bet_status TEXT NOT NULL DEFAULT 'placed', bet_time_stamp TEXT NOT NULL DEFAULT (datetime('now')), archived INTEGER NOT NULL DEFAULT 0, bet_input text not null );
