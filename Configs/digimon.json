@@ -1,0 +1,158 @@
+{    
+    "card_keywords":{
+        "blocker":{
+                "name":"<Blocker>",
+                "definition":"When an opponent's Digimon attacks, you may suspend this Digimon to force the opponent to attack it instead. This effect can be used against an attack from an opposing Digimon. The target of the attack changes to the Digimon that used ＜Blocker＞, taking the place of the original target."
+        },
+        "security attack":{
+            "name":"<Security A.>",
+            "definition":"<Security A. +X>\nThis Digimon checks x additional security card(s). Effect that increases the number of security cards checked by x when attacking the opposing player. When checking multiple security cards due to this effect, do not flip all security cards over at once. Instead, flip them over one at a time and don't move on to the next one until everything has resolved. If the attacking Digimon is defeated in battle or returned to the player's hand, the attack ends.\n\n<Security A. -X>\nThis Digimon checks x fewer security card(s). Effect that decreases the number of security cards checked by x when attacking the opposing player. If this effect causes the number of cards checked to become 0(it can't be less than 0), the opponent's security cards aren't checked. If your opponent has 0 security cards and you attack with a Digimon that checks 0 cards, you can't win the game."
+        },
+        "recovery":{
+            "name":"<Recovery +X (Deck)>",
+            "definition":"Place the top x card(s) of your deck on top of your security stack. Effect that has you to place x cards from your deck on top of your security stack without looking at them. With this effect, you can replenish your security stack. There is no limit to how many cards can be in your security stack."
+        },
+        
+        "piercing":{
+            "name":"<Piercing>",
+            "definition":"When this Digimon attacks and deletes an opponent's Digimon and survives the battle, it This effect allows a Digimon to check an opponent' s security cards after a battle if your Digimon defeats the opposing Digimon and survives. This effect also works if an attack is blocked, however it does not activate for battles with Security Digimon. Security checks resulting from ＜Piercing＞ are performed after all effects resulting from the battle have been resolved."
+        },
+        "draw":{
+            "name":"<Draw X>",
+            "definition":"Draw x card(s) from your deck. This effect allows you to add a number of cards to your hand from your deck. There is no limit to how many cards you can have in your hand."
+        },
+        "jamming":{
+            "name":"<Jamming>",
+            "definition":"This Digimon can't be deleted in battles against Security Digimon. Digimon with this effect will not be deleted if they lose a battle with the opponent's Security Digimon. If the Digimon has a ＜Security A. +X＞ effect that allows for an additional security card to be checked, that check can still be performed."
+        },
+        "digisorption":{
+            "name":"<Digisorption -X>",
+            "definition":"When one of your Digimon digivolves into this card from your hand, you may suspend of your 1 Digimon to reduce the memory cost of the digivolution by x. When digivolving into a card in your hand with this effect, you may suspend 1 of your Digimon to reduce the digivolve cost by the number specified in the effect. However, the digivolve cost can't be reduced to less than 0."
+        },
+        "reboot":{
+            "name":"<Reboot>",
+            "definition":"Unsuspend this Digimon during your opponent's unsuspend phase.Digimon with this effect are unsuspended during not only your unsuspend phase, but your opponent's unsuspend phase as well."
+        },
+        "de-digivolve":{
+            "name":"<De-Digivolve X>",
+            "definition":"Trash up to x cards from the top of one of your opponent's Digimon. If it has no digivolution cards, or becomes a level 3 Digimon, you can't trash any more cards. Trash the number of cards specified from your opponent' s Digimon that was targeted by the effect, starting from the top. This reduces the level of the target Digimon. However, Digimon can't be deleted or removed from play with this effect. Once a Digimon has lost all of its digivolution cards or has been reduced to level 3, you can't trash any more cards with this effect."
+        },
+        "retaliation":{
+            "name":"<Retaliation>",
+            "definition":"When this Digimon is deleted after losing a battle, delete the Digimon it was battling. When a Digimon with this effect loses a battle with one of your opponent’s Digimon, it deletes that Digimon, regardless of DP."
+        },
+        "digi-burst":{
+            "name":"<Digi-Burst X>",
+            "definition":"Trash X of this Digimon's digivolution cards to activate the effect below. At the indicated timing, you may trash the specified number of digivolution cards under the Digimon with this effect to activate its accompanying ＜Digi-Burst X＞ effect."
+        },
+        "rush":{
+            "name":"<Rush>",
+            "definition":"This Digimon can attack the turn it comes into play. Digimon with this effect can ignore the rule that states 'Digimon can't attack the turn they enter play' allowing it to declare an attack even if it was played on the current turn."
+        },
+        "blitz":{
+            "name":"<Blitz>",
+            "definition":"This Digimon can attack when your opponent has 1 or more memory. When digivolving into a Digimon with this effect, if your opponent ends up having 1 or more memory as a result of paying the digivolution cost, you can declare an attack with this Digimon before the turn changes over. However, if the Digimon is suspended, has an effect that prevents it from attacking, or is otherwise unable to attack normally, ＜Blitz＞ won't enable it to attack. This effect is often preceded by the timing '[When Digivolving]'."
+        },
+        "delay":{
+            "name":"<Delay>",
+            "definition":"Trash this card in your battle area to activate the effect below. You can't activate this effect the turn this card enters play. After placing an Option card with this effect in your battle area, you can trash it at the timing specified to activate the card's ＜Delay＞ effect. It's not necessary to pay an Option card's memory cost or meet color requirements when activating its ＜Delay＞ effect. This effect is often preceded by the timing '[Main]'."
+        },
+        "decoy":{
+            "name":"<Decoy (X)>",
+            "definition":"When one of your other (X) Digimon would be deleted by an opponent's effect, you may delete this Digimon to prevent that deletion. When one of your Digimon matching (X) characteristic would be deleted by an opponent’s effect, you can instead delete this Digimon to prevent that Digimon from being deleted. When multiple applicable Digimon would be deleted simultaneously, activating this effect allows you to prevent only one of those Digimon from being deleted. You can’t activate this effect to prevent the deletion of the Digimon with this effect."
+        },
+        "armor purge":{
+            "name":"<Armor Purge>",
+            "definition":"When this Digimon would be deleted, you may trash the top card of this Digimon to prevent that deletion. When your Digimon with this effect would be deleted, by trashing the Digimon stacked on top of the digivolution cards, it will no longer be deleted due to this effect. The Digimon that activated this effect becomes the Digimon that was at the top of its digivolution cards. This effect cannot be activated by Digimon without digivolution cards. Additionally, any effect gained before activating ＜Armor Purge＞ that does not specify how long the effect lasts will be lost due to the card itself no longer being in play."
+        },
+        "save":{
+            "name":"<Save>",
+            "definition":"You may place this card under one of your tamers. This effect is preceded by the timing '[On Deletion]'."
+        },
+        "material save":{
+            "name":"<Material Save X>",
+            "definition":"When this Digimon would be deleted, you may place X digivolution cards from its DigiXros requirements, under one of your Tamers."
+        },
+        "evade":{
+            "name":"<Evade>",
+            "definition":"When this Digimon would be deleted, you may suspend it to prevent that deletion."
+        },
+        "raid":{
+            "name":"<Raid>",
+            "definition":"When this Digimon attacks, you may switch the target of attack to 1 of your opponent's unsuspended Digimon with the highest DP."
+        },
+        "alliance":{
+            "name":"<Alliance>",
+            "definition":"When this Digimon attacks, by suspending 1 of your other Digimon, add the suspended Digimon's DP to this Digimon and it gains ＜Security A. +1＞ for the attack."
+        },
+        "barrier":{
+            "name":"<Barrier>",
+            "definition":"When this Digimon would be deleted in battle, by trashing the top card of your security stack, prevent that deletion."
+        },
+        "blast digivolve":{
+            "name":"<Blast Digivolve>",
+            "definition":"Your Digimon may digivolve into an Digimon card in your hand with this keyword without paying the cost. This effect is often activated from the [Hand] and preceded by the timing '[Counter]'."
+        },
+        "mind link":{
+            "name":"<Mind Link>",
+            "definition":"Place this Tamer under 1 of your Digimon without a Tamer in its digivolution cards. This effect is exclusive to Tamer card."
+        },
+        "fortitude":{
+            "name":"<Fortitude>",
+            "definition":"When this Digimon with digivolution cards is deleted, play this card without paying the cost."
+        },
+        "partition":{
+            "name":"<Partition (Lv.x + Lv.x)>",
+            "definition":"When this Digimon that has 1 of each specified cards in its digivolution cards would leave the battle area other than by your own effects or by battle, you may play 1 of each card without paying their costs."
+        },
+        "collision":{
+            "name":"<Collision>",
+            "definition":"During this Digimon's attack, all of your opponent's Digimon gain ＜Blocker＞, and must ＜Blocker＞ if possible."
+        },
+        "scapegoat":{
+            "name":"<Scapegoat>",
+            "definition":"When this Digimon would be deleted other than by your effects, by deleting 1 of your other Digimon, prevent that deletion."
+        },
+        "blast dna digivolve":{
+            "name":"<Blast DNA Digivolve ([X] + [X])>",
+            "definition":"You may DNA digivolve into this card using 1 of your specified Digimon and 1 specified Digimon in your hand. This effect is often activated from the [Hand] and preceded by the timing '[Counter]'."
+        },
+        "vortex":{
+            "name":"<vortex>",
+            "definition":"At the end of your turn, this Digimon may attack an opponent's Digimon. With this effect, it can attack the turn it was played."
+        },
+        "overclock":{
+            "name":"<Overclock>",
+            "definition":"At the end of your turn, by deleting 1 of your Tokens or other [Puppet] trait Digimon, this Digimon may attack a player without suspending."
+        },
+        "iceclad":{
+            "name":"<Iceclad>",
+            "definition":"This Digimon compares its number of digivolution cards instead of DP in battles other than with security Digimon."
+        },
+        "decode":{
+            "name":"<Decode (Lv.x)>",
+            "definition":"When this Digimon would leave the battle area other than in battle, you may play 1 X colour Level X Digimon card from its digivolution cards without paying the cost."
+        },
+        "fragment":{
+            "name":"<Fragment (X)>",
+            "definition":"When this Digimon would be deleted, by trashing any X of its digivolution cards, it isn't deleted."
+        },
+        "execute":{
+            "name":"<Execute>",
+            "definition":"At the end of your turn, this Digimon may attack. At the end of that attack, delete this Digimon. Your opponent's unsuspended Digimon can also be attacked with this effect."
+        },
+        "progress":{
+            "name":"<Progress>",
+            "definition":"While attacking, your opponent's effects don't affect this Digimon."
+        },
+        "link":{
+            "name":"<Link +1>",
+            "definition":"Add 1 to this Digimon's maximum links."
+        },
+        "training":{
+            "name":"<Training>",
+            "definition":"In the main phase, by suspending this Digimon, place your deck's top card face down as this Digimon's bottom digivolution card. This effect can also activate in the breeding area."
+        }
+        
+    }
+}

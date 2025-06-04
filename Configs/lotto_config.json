@@ -1,0 +1,47 @@
+{
+    "1":{
+        "type":"classic",
+        "name":"Classic Lotto",
+        "description":"A classic lotto game where 6 numbers are drawn from a pool of 1 to 49. Players can buy tickets with 6 numbers, and if they match all drawn numbers, they win the jackpot.",
+        "ticket_price":10,
+        "draw_days":[1,4],
+        "draw_time":18,
+        "matches":{
+            "6":{
+                "winnings":5000,
+                "description":"Match all 6 numbers to win the jackpot.",
+                "odds":"1 in 13,983,816"
+            },
+            "5":{
+                "winnings":500,
+                "description":"Match 5 numbers to win a smaller prize.",
+                "odds":"1 in 55492"
+            },
+            "4":{
+                "winnings":100,
+                "description":"Match 4 numbers to win a small prize.",
+                "odds":"1 in 1033"
+            },
+            "3":{
+                "winnings":25,
+                "description":"Match 3 numbers to win a small prize.",
+                "odds":"1 in 57"
+            },
+            "2":{
+                "winnings":10,
+                "description":"Match 2 numbers to win a consolation prize.",
+                "odds":"1 in 8"
+            },
+            "1":{
+                "winnings":0,
+                "description":"Match 1 number, no prize.",
+                "odds":"1 in 2.3"
+            },
+            "0":{
+                "winnings":0,
+                "description":"No match, no prize.",
+                "odds":"1 in 1.2"
+            }
+        }
+    }
+}

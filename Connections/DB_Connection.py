@@ -355,6 +355,7 @@ class DatabaseConnection:
 
         # Place the bet
         self.cursor.execute(self.config["insert"]["insert_place_roulette_bet"], (guild_id, user_id, bet_amount, bet_type, bet_details, bet_input,))
+        self.cursor.execute(self.config["update"]["update_decrease_user_bank_balance"], (bet_amount, guild_id, user_id,))
         self.connection.commit()
         self.close()
         return True
@@ -431,12 +432,154 @@ class DatabaseConnection:
         self.connect()
         if bet_win:
             self.cursor.execute(self.config["update"]["update_set_guild_roulette_bets_win_status"],(bet_id,))
-            self.cursor.execute(self.config["update"]["update_increase_user_bank_balance"], (amount*multiplier, guild_id, user_id,))
+            self.cursor.execute(self.config["update"]["update_increase_user_bank_balance"], ((amount*multiplier)+ amount, guild_id, user_id,))
         else:
             self.cursor.execute(self.config["update"]["update_set_guild_roulette_bets_lose_status"],(bet_id,))
-            self.cursor.execute(self.config["update"]["update_decrease_user_bank_balance"], (amount, guild_id, user_id,))
+            # self.cursor.execute(self.config["update"]["update_decrease_user_bank_balance"], (amount, guild_id, user_id,))
         
         self.connection.commit()
         self.close()
         
         return True
+    
+    def get_sunshine_list(self, guild_id:int) -> list:
+        """
+        Get the sunshine list for a given guild ID.
+        :param guild_id: The ID of the guild to get the sunshine list for.
+        :return: A list of dictionaries containing the sunshine list.
+        """
+        # Connect to the database
+        self.connect()
+
+        # Get the sunshine list
+        self.cursor.execute(self.config["select"]["select_sunshine_list"], (guild_id,))
+        result = self.cursor.fetchall()
+        self.close()
+        
+        return result
+    
+    def get_bottomboard(self, guild_id:int) -> list:
+        """
+        Get the bottomboard for a given guild ID.
+        :param guild_id: The ID of the guild to get the sunshine list for.
+        :return: A list of dictionaries containing the sunshine list.
+        """
+        # Connect to the database
+        self.connect()
+
+        # Get the sunshine list
+        self.cursor.execute(self.config["select"]["select_bottomboard"], (guild_id,))
+        result = self.cursor.fetchall()
+        self.close()
+        
+        return result
+    
+    # add_lotto_ticket(guild_id=guild_id, user_id=user_id, ticket_numbers=ticket, ticket_type=1, ticket_cost=ticket_cost)
+    def add_lotto_ticket(self, guild_id:int, user_id:int, ticket_numbers:str, ticket_type:int, ticket_cost:float) -> bool:
+        """
+        Add a lotto ticket for a user.
+        :param guild_id: The ID of the guild to add the ticket to.
+        :param user_id: The ID of the user to add the ticket for.
+        :param ticket_numbers: The lotto ticket numbers as a string seperated by a comma.
+        :param ticket_type: The type of lotto ticket (1 for Classic).
+        :param ticket_cost: The cost of the lotto ticket.
+        :return: True if the ticket was added successfully, False otherwise.
+        """
+        # Connect to the database
+        self.connect()
+
+        # Add the lotto ticket
+        self.cursor.execute(self.config["insert"]["insert_lotto_ticket"], (guild_id, user_id, ticket_type, ticket_numbers,))
+        self.cursor.execute(self.config["update"]["update_decrease_user_bank_balance"], (ticket_cost, guild_id, user_id,))
+        self.connection.commit()
+        self.close()
+        
+        return True
+    def get_user_active_lotto_tickets(self, guild_id:int, user_id:int) -> list:
+        """
+        Get the active lotto tickets for a user.
+        :param guild_id: The ID of the guild to get the tickets from.   
+        :param user_id: The ID of the user to get the tickets for.
+        :return: A list of dictionaries containing the active lotto tickets.
+        {id, guild_id, user_id, ticket_type, ticket_numbers, ticket_time_stamp, archived, matches, winnings}
+        """ 
+        # Connect to the database
+        self.connect()
+
+        # Get the active lotto tickets
+        self.cursor.execute(self.config["select"]["select_user_active_lotto_tickets"], (guild_id, user_id,))
+        result = self.cursor.fetchall()
+        self.close()
+        
+        return result
+    def get_user_historic_lotto_tickets(self, guild_id:int, user_id:int) -> list:
+        """
+        Get the historic lotto tickets for a user.
+        :param guild_id: The ID of the guild to get the tickets from.
+        :param user_id: The ID of the user to get the tickets for.
+        :return: A list of dictionaries containing the historic lotto tickets.
+        """
+        # Connect to the database
+        self.connect()
+
+        # Get the historic lotto tickets
+        self.cursor.execute(self.config["select"]["select_user_historic_lotto_tickets"], (guild_id, user_id,))
+        result = self.cursor.fetchall()
+        self.close()
+        
+        return result
+    def set_lotto_ticket_results(self, guild_id:int, user_id:int, ticket_id:int, matches:int, winnings:float) -> bool:
+        """
+        Set the results for a lotto ticket.
+        :param guild_id: The ID of the guild to set the results for.
+        :param user_id: The ID of the user to set the results for.
+        :param ticket_id: The ID of the lotto ticket to set the results for.
+        :param matches: The number of matches for the ticket.
+        :param winnings: The winnings for the ticket.
+        :return: True if the results were set successfully, False otherwise.
+        """
+        # Connect to the database
+        self.connect()
+
+        # Set the lotto ticket results
+        self.cursor.execute(self.config["update"]["update_lotto_ticket_results"], ( ticket_id, matches, winnings,))
+        if winnings > 0:
+            # If the user won, update their bank balance
+            self.cursor.execute(self.config["update"]["update_increase_user_bank_balance"], (winnings, guild_id, user_id,))
+        self.connection.commit()
+        self.close()
+        
+        return True
+
+    def get_guild_typed_active_lotto_tickets(self, guild_id:int, ticket_type:int) -> list:
+        """
+        Get the active lotto tickets for a guild by ticket type.
+        :param guild_id: The ID of the guild to get the tickets from.
+        :param ticket_type: The type of lotto ticket (1 for Classic).
+        :return: A list of dictionaries containing the active lotto tickets.
+        {id, guild_id, user_id, ticket_type, ticket_numbers, ticket_time_stamp, archived, matches, winnings}
+        """
+        # Connect to the database
+        self.connect()
+
+        # Get the active lotto tickets
+        self.cursor.execute(self.config["select"]["select_guild_active_lotto_tickets"], (guild_id, ticket_type,))
+        result = self.cursor.fetchall()
+        self.close()
+        tickets = []
+        # ( id INTEGER, guild_id INTEGER, user_id INTEGER, ticket_type TEXT , ticket_numbers TEXT, ticket_time_stamp TEXT , archived INTEGER, matches INTEGER, winnings real"
+    
+        for row in result:
+            ticket = {}
+            ticket['id'] = row[0]
+            ticket['guild_id'] = row[1]
+            ticket['user_id'] = row[2]
+            ticket['ticket_type'] = row[3]
+            ticket['ticket_numbers'] = row[4]
+            ticket['ticket_time_stamp'] = row[5]
+            ticket['archived'] = row[6]
+            ticket['matches'] = row[7]
+            ticket['winnings'] = row[8]
+            tickets.append(ticket)
+        
+        return tickets

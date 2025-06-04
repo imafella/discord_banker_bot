@@ -5,7 +5,6 @@ avatar_compliment_config = utility.load_config("AvatarCompliments")
 goodbot_replies_config = utility.load_config("GoodBotReplies")
 crit_replies_config = utility.load_config("MaxRollResponses")
 bank_messages_config = utility.load_config("bank_messages")
-activities_config = utility.load_config("Activities")
 
 def roll(max:int=10):
 	return random.randint(1,max)
@@ -69,7 +68,8 @@ def pickRandomChangeCostResponse(username:str, currency_name:str, currency_symbo
 
 def pickRandomActivity():
 	# Pick a random activity response from the list
-	return pickRandomResponse(username=None, config=activities_config, fail_msg="I broke myself trying to pick an activity.")
+	list = utility.load_config("StaticResponses")['activities']
+	return pickRandomResponseNew(username=None, list=list, fail_msg="I broke myself trying to pick an activity.")
 
 def pickRandomYell(username:str=None):
 	config = utility.load_config("yelling")['yelling']
@@ -182,6 +182,16 @@ def pickRandomRouletteBetTooBigResponse(username:str=None, amount:float=0, curre
 			"[bank_balance]",
 			str(bank_balance)
 		)
+
+def pickRandomNiceResponse(username:str=None, fail_msg:str = "I broke myself trying to respond to you."):
+	# Pick a random nice response from the list
+	nice_responses_config = utility.load_config("StaticResponses")['nice_replies']
+	return pickRandomResponseNew(list=nice_responses_config, username=username, fail_msg=fail_msg)
+
+def pickRandomWeedResponse(username:str=None, fail_msg:str = "I broke myself trying to respond to you."):
+	# Pick a random nice response from the list
+	nice_responses_config = utility.load_config("StaticResponses")['weed_replies']
+	return pickRandomResponseNew(list=nice_responses_config, username=username, fail_msg=fail_msg)
 	
 def pickRandomResponseNew(list:list, fail_msg:str = "I broke myself trying to respond to you.", username:str=None) -> str:
 	total = len(list)

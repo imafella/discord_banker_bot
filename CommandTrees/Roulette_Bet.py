@@ -21,10 +21,10 @@ class Roulette(discord.app_commands.Group):
                 10: "black", 11: "black", 12: "red",
                 13: "black", 14: "red", 15: "black", 
                 16: "red", 17: "black", 18: "red",
-                19: "red", 20: "black", 21: "red",   
+                19: "black", 20: "black", 21: "red",   
                 22: "black", 23: "red", 24: "black",
                 25: "red",   26: "black", 27: "red",   
-                28: "black", 29: "black", 30: "red",
+                28: "red", 29: "black", 30: "red",
                 31: "black", 32: "red", 33: "black", 
                 34: "red", 35: "black", 36: "red",
             }
@@ -69,25 +69,23 @@ class Roulette(discord.app_commands.Group):
                 return x
         return 0
 
-    async def is_valid_corner(self, n1: int, n2: int, n3: int, n4: int) -> bool:
+    async def is_valid_corner(self, top_left_of_corner: int) -> bool:
         """
         Validates that the four numbers form a square (corner) on a standard roulette table.
         """
-        nums = sorted([n1, n2, n3, n4])
         # All numbers must be between 1 and 36
-        if any(num < 1 or num > 36 for num in nums):
+        if top_left_of_corner< 1 or top_left_of_corner > 36:
             return False
 
-        # Try all possible arrangements for the top-left of the square
-        for n in nums:
-            # n must not be in the rightmost column
-            if n % 3 == 0:
-                continue
-            # The square should be: n, n+1, n+3, n+4
-            square = {n, n+1, n+3, n+4}
-            if set(nums) == square and all(1 <= x <= 36 for x in square):
-                return True
-        return False
+        if top_left_of_corner % 3 == 0:
+            # If the number is a multiple of 3, it can't be a corner
+            return False
+        
+        if top_left_of_corner > 33:
+            # If the number is greater than 33, it can't form a corner
+            return False
+
+        return True
 
     async def is_valid_six_line(self, row_start: int) -> bool:
         # Valid row starts for a double street (must have a row below)
@@ -113,7 +111,16 @@ class Roulette(discord.app_commands.Group):
         roll = random.randint(0,36)
         return roll
     
-    async def get_roulette_roll_color(self,roll:int):
+    async def get_roulette_roll_color(self,roll:int, use_emojis:bool=False) -> str:
+        if use_emojis:
+            if roll == 0:
+                return "🟢"
+            elif self.wheel[roll] == "red":
+                return "🔴"
+            elif self.wheel[roll] == "black":
+                return "⚫️"
+            else:
+                return "❓"
         return self.wheel[roll]
 
     async def did_bet_win(self,bet:dict, result:dict) -> bool:
@@ -170,8 +177,8 @@ class Roulette(discord.app_commands.Group):
         
     # --- Inside Bets ---
 
-    @discord.app_commands.command(name="straight", description="Bet on a single number (0 or 1–36). Payout: 35:1")
-    async def straight(self, interaction: discord.Interaction, number: int, amount: float):
+    @discord.app_commands.command(name="straight_bet", description="Bet on a single number (0 or 1–36). Payout: 35:1")
+    async def straight_bet(self, interaction: discord.Interaction, number: int, amount: float):
         """Place a straight up bet on a single number."""
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
 
@@ -210,8 +217,8 @@ class Roulette(discord.app_commands.Group):
         
         await interaction.response.send_message(content=msg)
 
-    @discord.app_commands.command(name="split", description="Bet on two adjacent numbers. Payout: 17:1")
-    async def split(self, interaction: discord.Interaction, number1: int, number2: int, amount: float):
+    @discord.app_commands.command(name="split_bet", description="Bet on two adjacent numbers. Payout: 17:1")
+    async def split_bet(self, interaction: discord.Interaction, number1: int, number2: int, amount: float):
         """Place a split bet between two adjacent numbers."""
 
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
@@ -255,8 +262,8 @@ class Roulette(discord.app_commands.Group):
         
         await interaction.response.send_message(content=msg)
 
-    @discord.app_commands.command(name="street", description="Bet on a row of three numbers. Payout: 11:1")
-    async def street(self, interaction: discord.Interaction, row_start:int, amount:float):
+    @discord.app_commands.command(name="street_bet", description="Bet on a row of three numbers. Payout: 11:1")
+    async def street_bet(self, interaction: discord.Interaction, row_start:int, amount:float):
         """Place a street bet (row of three numbers, e.g., 1-2-3)."""
 
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
@@ -300,8 +307,8 @@ class Roulette(discord.app_commands.Group):
         
         await interaction.response.send_message(content=msg)
 
-    @discord.app_commands.command(name="corner", description="Bet on four numbers in a square. Payout: 8:1")
-    async def corner(self, interaction: discord.Interaction, number1: int, number2: int, number3: int, number4: int, amount: float):
+    @discord.app_commands.command(name="corner_bet", description="Bet on four numbers in a square. You select the one on the bottom left of the square Payout: 8:1")
+    async def corner_bet(self, interaction: discord.Interaction, bottom_left_of_corner:int, amount: float):
         """Place a corner bet on four numbers in a square."""
 
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
@@ -326,7 +333,7 @@ class Roulette(discord.app_commands.Group):
             return
         
         # Validate bet
-        is_valid_corner = await self.is_valid_corner(n1=number1,n2=number2,n3=number3,n4=number4)
+        is_valid_corner = await self.is_valid_corner(top_left_of_corner = bottom_left_of_corner)
         if not is_valid_corner:
             file = await self.get_table()
             await interaction.response.send_message(content=f"Corner bet needs to be placed on four numbers in a square. You didn't do that. Do better. Look at the table!", file=file)
@@ -335,17 +342,17 @@ class Roulette(discord.app_commands.Group):
             await interaction.response.send_message(content="No negative bets! Do I need to call a bouncer?")
             return
         
-        self.database.place_bet_roulette(guild_id=interaction.guild_id, user_id=interaction.user.id, bet_amount=amount, bet_type="corner", bet_details=f"{number1},{number2},{number3},{number4}", bet_input=f"{number1}, {number2}, {number3}, and {number4}")
-
         bet_type = "Corner"
-        bet_input = f"{number1}, {number2}, {number3}, and {number4}"
+        bet_input = f"corner starting with {bottom_left_of_corner}"
+        self.database.place_bet_roulette(guild_id=interaction.guild_id, user_id=interaction.user.id, bet_amount=amount, bet_type="corner", bet_details=f"{bottom_left_of_corner},{bottom_left_of_corner+1},{bottom_left_of_corner+3},{bottom_left_of_corner+4}", bet_input=bet_input)
+        
         
         msg = pickRandomRouletteBetResponse(username=username, amount=amount,currency_name=guild_currency[2], currency_symbol=guild_currency[3], bet_type=bet_type, bet_details=bet_input )
         
         await interaction.response.send_message(content=msg)
 
-    @discord.app_commands.command(name="sixline", description="Bet on two adjacent rows (six numbers) Also called a Double Street. Payout: 5:1")
-    async def sixline(self, interaction: discord.Interaction, row_start: int, amount: float):
+    @discord.app_commands.command(name="sixline_bet", description="Bet on two adjacent rows (six numbers) Also called a Double Street. Payout: 5:1")
+    async def sixline_bet(self, interaction: discord.Interaction, row_start: int, amount: float):
         """Place a six line bet (two adjacent rows, e.g., 1-6)."""
 
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
@@ -395,12 +402,12 @@ class Roulette(discord.app_commands.Group):
 
     # --- Outside Bets ---
 
-    @discord.app_commands.command(name="color", description="Bet on red or black. Payout: 1:1")
+    @discord.app_commands.command(name="color_bet", description="Bet on red or black. Payout: 1:1")
     @discord.app_commands.choices(choice=[
         discord.app_commands.Choice(name="Blacks", value="black"),
         discord.app_commands.Choice(name="Reds", value="red")
     ])
-    async def color(self, interaction: discord.Interaction, choice:discord.app_commands.Choice[str], amount: float):
+    async def color_bet(self, interaction: discord.Interaction, choice:discord.app_commands.Choice[str], amount: float):
         """Bet on color: 'red' or 'black'."""
 
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
@@ -447,12 +454,12 @@ class Roulette(discord.app_commands.Group):
         
         await interaction.response.send_message(content=msg)
 
-    @discord.app_commands.command(name="parity", description="Bet on odd or even. Payout: 1:1")
+    @discord.app_commands.command(name="oddeven_bet", description="Bet on odd or even. Payout: 1:1")
     @discord.app_commands.choices(choice=[
         discord.app_commands.Choice(name="Odds", value="odd"),
         discord.app_commands.Choice(name="Evens", value="even")
     ])
-    async def parity(self, interaction: discord.Interaction, choice:discord.app_commands.Choice[str], amount: float):
+    async def oddeven_bet(self, interaction: discord.Interaction, choice:discord.app_commands.Choice[str], amount: float):
         """Bet on 'odd' or 'even'."""
 
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
@@ -498,12 +505,12 @@ class Roulette(discord.app_commands.Group):
         
         await interaction.response.send_message(content=msg)
 
-    @discord.app_commands.command(name="lowhigh", description="Bet on low (1–18) or high (19–36). Payout: 1:1")
+    @discord.app_commands.command(name="lowhigh_bet", description="Bet on low (1–18) or high (19–36). Payout: 1:1")
     @discord.app_commands.choices(choice=[
         discord.app_commands.Choice(name="Low", value="low"),
         discord.app_commands.Choice(name="High", value="high")
     ])
-    async def lowhigh(self, interaction: discord.Interaction, choice:discord.app_commands.Choice[str], amount: float):
+    async def lowhigh_bet(self, interaction: discord.Interaction, choice:discord.app_commands.Choice[str], amount: float):
         """Bet on 'low' (1–18) or 'high' (19–36)."""
 
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
@@ -549,13 +556,13 @@ class Roulette(discord.app_commands.Group):
         
         await interaction.response.send_message(content=msg)
 
-    @discord.app_commands.command(name="dozen", description="Bet on a dozen (1:1–12, 2:13–24, 3:25–36). Payout: 2:1")
+    @discord.app_commands.command(name="dozen_bet", description="Bet on a dozen (1:1–12, 2:13–24, 3:25–36). Payout: 2:1")
     @discord.app_commands.choices(choice=[
         discord.app_commands.Choice(name="1st", value=1),
         discord.app_commands.Choice(name="2nd", value=2),
         discord.app_commands.Choice(name="3rd", value=3)
     ])
-    async def dozen(self, interaction: discord.Interaction, choice:discord.app_commands.Choice[int], amount: float):
+    async def dozen_bet(self, interaction: discord.Interaction, choice:discord.app_commands.Choice[int], amount: float):
         """Bet on a dozen: 1 (1–12), 2 (13–24), or 3 (25–36)."""
 
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
@@ -611,13 +618,13 @@ class Roulette(discord.app_commands.Group):
         
         await interaction.response.send_message(content=msg)
 
-    @discord.app_commands.command(name="column", description="Bet on a column (1st, 2nd, 3rd). Payout: 2:1")
+    @discord.app_commands.command(name="column_bet", description="Bet on a column (1st, 2nd, 3rd). Payout: 2:1")
     @discord.app_commands.choices(choice=[
         discord.app_commands.Choice(name="1st", value=1),
         discord.app_commands.Choice(name="2nd", value=2),
         discord.app_commands.Choice(name="3rd", value=3)
     ])
-    async def column(self, interaction: discord.Interaction, choice:discord.app_commands.Choice[int], amount: float):
+    async def column_bet(self, interaction: discord.Interaction, choice:discord.app_commands.Choice[int], amount: float):
         """Bet on a column: 1 (1st), 2 (2nd), or 3 (3rd)."""
 
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
@@ -651,9 +658,9 @@ class Roulette(discord.app_commands.Group):
 
         if column == 1:
             bet_details = "1,4,7,10,13,16,19,22,25,28,31,34"
-        if column == 2:
+        elif column == 2:
             bet_details = "2,5,8,11,14,17,20,23,26,29,32,35"
-        if column == 3:
+        elif column == 3:
             bet_details = "3,6,9,12,15,18,21,24,27,30,33,36"
         else: # Get fucked on this error
             bet_details = "0"
@@ -666,8 +673,8 @@ class Roulette(discord.app_commands.Group):
         
         await interaction.response.send_message(content=msg)
 
-    @discord.app_commands.command(name="live_bets", description="List all the current bets in this round of Roulette")
-    async def live_bets(self, interaction: discord.Interaction):
+    @discord.app_commands.command(name="view_live_bets", description="List all the current bets in this round of Roulette")
+    async def view_live_bets(self, interaction: discord.Interaction):
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
 
         await interaction.response.defer()
@@ -679,17 +686,17 @@ class Roulette(discord.app_commands.Group):
 
         list_of_bets = self.database.get_placed_guild_roulette_bets(guild_id=guild_id)
         output = f"{username}, here are a list of all currently placed bets:"
-        for bet in list_of_bets:
+        for index, bet in enumerate(list_of_bets):
             member = await interaction.guild.fetch_member(bet['user_id'])
             if member == None:
                 print(f"Member not found: {bet['user_id']}")
                 continue
-            output+= f"\n{member.mention} has placed a {bet['type']} bet on {bet['input']} for {bet['amount']} {guild_currency[2]}s at {bet['datetime']} NST"
+            output+= f"\n{index+1}) {member.mention} has placed a {bet['type']} bet on {bet['input']} for {bet['amount']} {guild_currency[2]}s at {bet['datetime']} NST"
 
         await interaction.followup.send(content=output)
 
-    @discord.app_commands.command(name="your_bet_history", description="List all the historic bets you have placed.")
-    async def your_bet_history(self, interaction: discord.Interaction):
+    @discord.app_commands.command(name="view_your_bet_history", description="List all the historic bets you have placed.")
+    async def view_your_bet_history(self, interaction: discord.Interaction):
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
 
         await interaction.response.defer()
@@ -705,14 +712,14 @@ class Roulette(discord.app_commands.Group):
             await interaction.followup.send(content=f"By Golly! {username}, you have never placed a bet!")
             return
         output = f"{username}, here are a list of all your previous bets:"
-        for bet in list_of_bets:            
-            output+= f"\nAt {bet['datetime']} NST, you placed a {bet['type']} bet on {bet['input']} for {bet['amount']} {guild_currency[2]}s. It {bet['status']}."
+        for index, bet in enumerate(list_of_bets):            
+            output+= f"\n{index+1}) {bet['datetime']} NST, you placed a {bet['type']} bet on {bet['input']} for {bet['amount']} {guild_currency[2]}s. It {bet['status']}."
 
         await interaction.followup.send(content=output)
 
 
-    @discord.app_commands.command(name="your_bets", description="List all the current bets you have placed.")
-    async def your_bets(self, interaction: discord.Interaction):
+    @discord.app_commands.command(name="view_your_active_bets", description="List all the current bets you have placed.")
+    async def view_your_active_bets(self, interaction: discord.Interaction):
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
 
         await interaction.response.defer()
@@ -728,7 +735,16 @@ class Roulette(discord.app_commands.Group):
             await interaction.followup.send(content=f"By Golly! {username}, you haven't placed a bet!")
             return
         output = f"{username}, here are a list of all your bets:"
-        for bet in list_of_bets:            
-            output+= f"\nAt {bet['datetime']} NST, you placed a {bet['type']} bet on {bet['input']} for {bet['amount']} {guild_currency[2]}s."
+        for index, bet in enumerate(list_of_bets):            
+            output+= f"\n{index+1}) {bet['datetime']} NST, you placed a {bet['type']} bet on {bet['input']} for {bet['amount']} {guild_currency[2]}s."
 
         await interaction.followup.send(content=output)
+
+    @discord.app_commands.command(name="view_roulette_info", description="Details about the Roulette game.")
+    async def view_roulette_info(self, interaction: discord.Interaction):
+        self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
+        msg = "Roulette is a game of chance where players can place bets on various outcomes. The game features a spinning wheel with numbered slots, and players can bet on specific numbers, colors, or ranges of numbers using the /roulette bet type commands (ending in _bet). The payouts vary based on the type of bet placed." 
+        msg+="\n\n**Commands:**"
+        for command in self.commands:
+            msg+= f"\n\n/roulette {command.name} - {command.description}"
+        await interaction.response.send_message(content=msg)

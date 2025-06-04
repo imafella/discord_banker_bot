@@ -53,10 +53,34 @@ def is_past_Allowance_Time():
 
 def is_Allowance_Day():
     # Get the current time
-    now = datetime.now()
+    return check_if_day(os.getenv('ALLOWANCE_DAY', "0"))  # Monday is 0
 
-    # Check if today is Saturday
-    return now.weekday() == int(os.getenv('ALLOWANCE_DAY', "0"))  # Monday is 0
+def is_classic_lotto_draw_day():
+    """
+    Check if today is a Classic Lotto draw day.
+    """
+    return check_if_day(1) or check_if_day(4)
+
+def is_past_classic_lotto_draw_time():
+    return check_if_past_time(18)  # Default to 6 PM
+
+def check_if_day(day:int) -> bool:
+    """
+    Check if today is the specified day of the week.
+    :param day: The day of the week to check (0=Monday, 6=Sunday).
+    :return: True if today is the specified day, False otherwise.
+    """
+    now = datetime.now()
+    return now.weekday() == day
+
+def check_if_past_time(hour:int) -> bool:
+    """
+    Check if the current time is past the specified hour.
+    :param hour: The hour to check (0-23).
+    :return: True if the current time is past the specified hour, False otherwise.
+    """
+    now = datetime.now()
+    return now.hour >= hour
 
 def calculate_Allowance(allowance_info:list) -> dict:
     '''

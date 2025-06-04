@@ -53,8 +53,8 @@ class Bank(discord.app_commands.Group):
         return
 
 
-    @discord.app_commands.command(name="get_balance",description="Get your bank balance.")
-    async def get_balance(self, interaction: discord.Interaction):
+    @discord.app_commands.command(name="balance",description="Get your bank balance.")
+    async def balance(self, interaction: discord.Interaction):
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
         user_id = interaction.user.id
         if interaction.guild is None:
@@ -80,8 +80,8 @@ class Bank(discord.app_commands.Group):
         
         await interaction.response.send_message(content=pickRandomBankBalanceResponse(username=interaction.user.mention, bank_balance=bank_account[3], currency_name=guild_currency[2], currency_symbol=guild_currency[3]))
 
-    @discord.app_commands.command(name="leave_bank",description="Close your bank account.")
-    async def leave_bank(self, interaction: discord.Interaction):
+    @discord.app_commands.command(name="leave",description="Close your bank account.")
+    async def leave(self, interaction: discord.Interaction):
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
         user_id = interaction.user.id
         if interaction.guild is None:
@@ -109,8 +109,8 @@ class Bank(discord.app_commands.Group):
         
         await interaction.response.send_message(content=pickRandomLeavingTheBankResponse(username=interaction.user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3], bank_balance=bank_account[3]))
 
-    @discord.app_commands.command(name="get_change_costs",description="Get the costs of changing the currency name and symbol.")
-    async def get_change_costs(self, interaction: discord.Interaction):
+    @discord.app_commands.command(name="costs",description="Get the costs of changing the currency name and symbol.")
+    async def costs(self, interaction: discord.Interaction):
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
         if interaction.guild is None:
             await interaction.response.send_message(content="You need to be in a server to get the change costs.")
@@ -129,8 +129,8 @@ class Bank(discord.app_commands.Group):
         
         await interaction.response.send_message(content=pickRandomChangeCostResponse(username=interaction.user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3], name_cost=guild_currency_change_costs[2], symbol_cost=guild_currency_change_costs[3]))
 
-    @discord.app_commands.command(name="change_currency_name",description="Change the currency name.")
-    async def change_currency_name(self, interaction: discord.Interaction, new_currency_name:str):
+    @discord.app_commands.command(name="set_name",description="Change the currency name.")
+    async def set_name(self, interaction: discord.Interaction, new_currency_name:str):
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
         if interaction.guild is None:
             await interaction.response.send_message(content="You need to be in a server to change the currency name.")
@@ -181,11 +181,14 @@ class Bank(discord.app_commands.Group):
         if not did_the_thing:
             await interaction.response.send_message(content="I broke myself trying to change the currency name.")
             return
-        #TODO pickRandomChangeCurrencyNameResponse
-        await interaction.response.send_message(content=f"Changed the currency name to {new_currency_name}.")
+        
+        # get updated bank account details
+        bank_account = self.database.get_user_bank_account_details(user_id=user_id, guild_id=guild_id)
+        new_balance_msg = f"{interaction.user.mention}, your new balance is {bank_account[3]} {new_currency_name}s."
+        await interaction.response.send_message(content=f"Changed the currency name to {new_currency_name}.\n {new_balance_msg}")
 
-    @discord.app_commands.command(name="change_currency_symbol",description="Change the currency symbol.")
-    async def change_currency_symbol(self, interaction: discord.Interaction, new_currency_symbol:str):
+    @discord.app_commands.command(name="set_symbol",description="Change the currency symbol.")
+    async def set_symbol(self, interaction: discord.Interaction, new_currency_symbol:str):
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
         if interaction.guild is None:
             await interaction.response.send_message(content="You need to be in a server to change the currency symbol.")
@@ -231,12 +234,16 @@ class Bank(discord.app_commands.Group):
         if not did_the_thing:
             await interaction.response.send_message(content="I broke myself trying to change the currency symbol.")
             return
-        #TODO pickRandomChangeCurrencySymbolResponse
-        await interaction.response.send_message(content=f"Changed the currency symbol to {new_currency_symbol}.")
+        
+        # get updated bank account details
+        bank_account = self.database.get_user_bank_account_details(user_id=user_id, guild_id=guild_id)
+        new_balance_msg = f"{interaction.user.mention}, your new balance is {new_currency_symbol}{bank_account[3]}."
+
+        await interaction.response.send_message(content=f"Changed the currency symbol to {new_currency_symbol}.\n{new_balance_msg}")
 
     #TODO transfer_money
-    @discord.app_commands.command(name="transfer_money",description="Transfer money to another user.")
-    async def transfer_money(self, interaction: discord.Interaction, user:discord.User, amount:float, reason:str=None):
+    @discord.app_commands.command(name="transfer",description="Transfer money to another user.")
+    async def transfer(self, interaction: discord.Interaction, user:discord.User, amount:float, reason:str=None):
         # Acknowledge the interaction immediately
         await interaction.response.defer()
 
@@ -288,6 +295,14 @@ class Bank(discord.app_commands.Group):
         msg = f"Transferred {amount} {guild_currency[2]}s from {interaction.user.mention} to {user.mention}."
         if reason is not None:
             msg+= f"\nReason: {reason}"
+
+        payee_account = self.database.get_user_bank_account_details(user_id=user.id, guild_id=guild_id)
+        payer_account = self.database.get_user_bank_account_details(user_id=user_id, guild_id=guild_id)
+
+        new_balance_msg = f"{interaction.user.mention}, your new balance is {payer_account[3]} {guild_currency[2]}s.\n"
+        new_balance_msg += f"{user.mention}, your new balance is {payee_account[3]} {guild_currency[2]}s."
+        msg += f"\n{new_balance_msg}"
+
         await interaction.followup.send(content=msg)
 
     @discord.app_commands.command(name="award",description="Award money to a user. Bank Admin Command.")
@@ -323,7 +338,10 @@ class Bank(discord.app_commands.Group):
         if not did_the_thing:
             await interaction.response.send_message(content="I broke myself trying to award money.")
             return
-        await interaction.response.send_message(content=pickRandomAwardMoneyResponse(amount=amount, guild_currency_name=guild_currency[2], guild_currency_symbol=guild_currency[3], username = user.mention, reason = reason))
+        
+        bank_account = self.database.get_user_bank_account_details(user_id=user.id, guild_id=guild_id)
+        new_balance_msg = f"{user.mention}, your new balance is {bank_account[3]} {guild_currency[2]}s."
+        await interaction.response.send_message(content=f"{pickRandomAwardMoneyResponse(amount=amount, guild_currency_name=guild_currency[2], guild_currency_symbol=guild_currency[3], username = user.mention, reason = reason)}\n{new_balance_msg}")
 
     @discord.app_commands.command(name="set_balance",description="Set the bank balance of a user.")
     async def set_balance(self, interaction: discord.Interaction, user:discord.User, amount:float):
@@ -361,8 +379,8 @@ class Bank(discord.app_commands.Group):
         #TODO pickRandomSetBankBalanceResponse
         await interaction.response.send_message(content=f"Set {user.mention}'s bank balance to {amount}.")
 
-    @discord.app_commands.command(name="get_currency_details",description="Get the currency details.")
-    async def get_currency_details(self, interaction: discord.Interaction):
+    @discord.app_commands.command(name="currency_details",description="Get the currency details.")
+    async def currency_details(self, interaction: discord.Interaction):
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
         if interaction.guild is None:
             await interaction.response.send_message(content="You need to be in a server to get the currency details.")
@@ -374,8 +392,82 @@ class Bank(discord.app_commands.Group):
             self.database.set_up_guild_bank(guild_id=guild_id)
 
         guild_currency = self.database.get_guild_currency_details(guild_id=guild_id)
+        guild_currency_change_costs = self.database.get_change_costs(guild_id=guild_id)
         if guild_currency is None:
             await interaction.response.send_message(content="I broke myself trying to get the currency details.")
             return
+        msg = f"Currency: {guild_currency[2]}\nSymbol: {guild_currency[3]}"
+        msg += f"\nThe cost to change the {guild_currency[2]}'s name is {guild_currency_change_costs[2]} {guild_currency[2]}s and the cost to change the {guild_currency[2]}'s symbol is {guild_currency[3]}{guild_currency_change_costs[3]}."
+        await interaction.response.send_message(content=msg)
+
+    @discord.app_commands.command(name="leaderboard",description="Lists the users with the top 5 amounts of currency in the bank.")
+    async def leaderboard(self, interaction: discord.Interaction):
+        self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
+        if interaction.guild is None:
+            await interaction.response.send_message(content="You need to be in a server to get the sunshine list.")
+            return
+        guild_id = interaction.guild.id
+
+        # Check if the guild has its own bank
+        if not self.database.is_guild_bank_setup(guild_id=guild_id):
+            self.database.set_up_guild_bank(guild_id=guild_id)
+
+        guild_currency = self.database.get_guild_currency_details(guild_id=guild_id)
+        sunshine_list = self.database.get_sunshine_list(guild_id=guild_id)
+        if sunshine_list is None:
+            await interaction.response.send_message(content="I broke myself trying to get the sunshine list.")
+            return
         
-        await interaction.response.send_message(content=f"The currency name is {guild_currency[2]} and the symbol is {guild_currency[3]}.")
+        msg = "Leaderboard:\n"
+        for i, account in enumerate(sunshine_list): #guild_id, user_id, balance
+            member = interaction.guild.get_member(account[1])
+            if member is None:
+                # If the member is not found, we skip this account
+                continue
+            msg += f"{i+1}. {member.display_name}: {account[2]} {guild_currency[2]}s\n"
+            if i >= 4:
+                break
+        
+        await interaction.response.send_message(content=msg)
+
+    @discord.app_commands.command(name="bottomboard",description="Lists the users with the bottom 5 amounts of currency in the bank.")
+    async def bottomboard(self, interaction: discord.Interaction):
+        self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
+        if interaction.guild is None:
+            await interaction.response.send_message(content="You need to be in a server to get the sunshine list.")
+            return
+        guild_id = interaction.guild.id
+
+        # Check if the guild has its own bank
+        if not self.database.is_guild_bank_setup(guild_id=guild_id):
+            self.database.set_up_guild_bank(guild_id=guild_id)
+
+        guild_currency = self.database.get_guild_currency_details(guild_id=guild_id)
+        sunshine_list = self.database.get_bottomboard(guild_id=guild_id)
+        if sunshine_list is None:
+            await interaction.response.send_message(content="I broke myself trying to get the bottomboard.")
+            return
+        
+        msg = "Bottomboard:\n"
+        for i, account in enumerate(sunshine_list): #guild_id, user_id, balance
+            member = interaction.guild.get_member(account[1])
+            if member is None:
+                # If the member is not found, we skip this account
+                continue
+            msg += f"{i+1}. {member.display_name}: {account[2]} {guild_currency[2]}s\n"
+            if i >= 4:
+                break
+        
+        await interaction.response.send_message(content=msg)
+
+
+    @discord.app_commands.command(name="view_bank_info", description="Details about the Bank system")
+    async def view_bank_info(self, interaction: discord.Interaction):
+        self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
+        msg = "The Bank system allows users to manage their currency within the server. You can join the bank, check your balance, transfer money, and more.\n"
+        msg += "To get started, use the `/bank join` command to create your bank account. Once you have an account, you can check your balance, transfer money to other users, and even change the currency name and symbol.\n\n" 
+        msg+="**Commands:**"
+        for command in self.commands:
+            msg+= f"\n\n/bank {command.name} - {command.description}"
+        await interaction.response.send_message(content=msg)
+     

@@ -4,7 +4,8 @@
         "create_table_bank_accounts":"CREATE TABLE IF NOT EXISTS guild_bank (id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id integer NOT NULL, user_id integer NOT NULL, balance real DEFAULT 0, bot_use integer not null DEFAULT 0, archived integer not null DEFAULT 0, UNIQUE(id, guild_id, user_id))",
         "create_table_guild_currencies":"CREATE TABLE IF NOT EXISTS guild_currencies (id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id integer NOT NULL, currency_name TEXT NOT NULL, currency_symbol TEXT NOT NULL, UNIQUE(id, guild_id))",
         "create_table_guild_currency_change_costs":"CREATE TABLE IF NOT EXISTS guild_currency_change_costs (id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id integer NOT NULL, currency_name_cost real DEFAULT 1.00, currency_symbol_cost real DEFAULT 1.00, UNIQUE(id, guild_id))",
-        "create_table_roulette_bets":"CREATE TABLE IF NOT EXISTS guild_roulette_bets ( id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id INTEGER NOT NULL, user_id INTEGER NOT NULL, bet_amount REAL NOT NULL DEFAULT 0, bet_type TEXT NOT NULL, bet_details TEXT NOT NULL, bet_status TEXT NOT NULL DEFAULT 'placed', bet_time_stamp TEXT NOT NULL DEFAULT (datetime('now')), archived INTEGER NOT NULL DEFAULT 0, bet_input text not null )"
+        "create_table_roulette_bets":"CREATE TABLE IF NOT EXISTS guild_roulette_bets ( id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id INTEGER NOT NULL, user_id INTEGER NOT NULL, bet_amount REAL NOT NULL DEFAULT 0, bet_type TEXT NOT NULL, bet_details TEXT NOT NULL, bet_status TEXT NOT NULL DEFAULT 'placed', bet_time_stamp TEXT NOT NULL DEFAULT (datetime('now')), archived INTEGER NOT NULL DEFAULT 0, bet_input text not null )",
+        "create_table_lotto_tickets":"CREATE TABLE IF NOT EXISTS guild_lotto_tickets ( id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id INTEGER NOT NULL, user_id INTEGER NOT NULL, ticket_type TEXT not null, ticket_numbers TEXT NOT NULL, ticket_time_stamp TEXT NOT NULL DEFAULT (datetime('now')), archived INTEGER NOT NULL DEFAULT 0, matches INTEGER not null DEFAULT 0, winnings real not null default 0, UNIQUE(id, guild_id, user_id, ticket_time_stamp))"
     
     },
 
@@ -14,7 +15,8 @@
         "insert_user_into_guild_bank":"INSERT INTO guild_bank (guild_id, user_id, balance) VALUES (?, ?, ?)",
         "insert_guild_into_guilds":"INSERT INTO guilds (guild_id, guild_name) VALUES (?, ?)",
         "insert_roulette":"INSERT INTO live_guild_roulette (guild_id, isLive) VALUES (?, ?)",
-        "insert_place_roulette_bet":"INSERT INTO guild_roulette_bets (guild_id, user_id, bet_amount, bet_type, bet_details, bet_input) VALUES (?, ?, ?, ?, ?, ?)"
+        "insert_place_roulette_bet":"INSERT INTO guild_roulette_bets (guild_id, user_id, bet_amount, bet_type, bet_details, bet_input) VALUES (?, ?, ?, ?, ?, ?)",
+        "insert_lotto_ticket":"INSERT INTO guild_lotto_tickets (guild_id, user_id, ticket_type, ticket_numbers) VALUES (?, ?, ?, ?)"
     },
 
     "update":{
@@ -32,8 +34,9 @@
         "update_set_user_bank_balance":"UPDATE guild_bank SET balance = ? WHERE guild_id = ? AND user_id = ? and archived = 0",
         "update_increment_bot_use":"UPDATE guild_bank SET bot_use = bot_use + 1 WHERE guild_id = ? AND user_id = ? and archived = 0",
         "update_reset_bot_use":"UPDATE guild_bank SET bot_use = 0 WHERE archived = 0",
-        "update_set_guild_roulette_bets_lose_status":"update guild_roulette_bets set bet_status 'lost', archived = 1 where id = ?",
-        "update_set_guild_roulette_bets_win_status":"update guild_roulette_bets set bet_status 'won', archived = 1 where id = ?"
+        "update_set_guild_roulette_bets_lose_status":"update guild_roulette_bets set bet_status = 'lost', archived = 1 where id = ?",
+        "update_set_guild_roulette_bets_win_status":"update guild_roulette_bets set bet_status = 'won', archived = 1 where id = ?",
+        "update_lotto_ticket_results":"UPDATE guild_lotto_tickets SET archived = 1, matches = ?, winnings = ? WHERE id = ?"
     },
 
     "select":{
@@ -45,7 +48,12 @@
         "select_users_for_allowance":"SELECT guild_id, user_id, bot_use FROM guild_bank WHERE archived = 0",
         "select_placed_guild_roulette_bets":"SELECT * FROM guild_roulette_bets WHERE guild_id = ? and archived = 0",
         "select_active_user_roulette_bets":"SELECT * FROM guild_roulette_bets WHERE guild_id = ? AND user_id = ? and archived = 0",
-        "select_historic_user_roulette_bets":"SELECT * FROM guild_roulette_bets WHERE guild_id = ? AND user_id = ? and archived = 1"
+        "select_historic_user_roulette_bets":"SELECT * FROM guild_roulette_bets WHERE guild_id = ? AND user_id = ? and archived = 1",
+        "select_sunshine_list":"SELECT guild_id, user_id, balance FROM guild_bank WHERE guild_id = ? AND archived = 0 ORDER BY balance DESC",
+        "select_bottomboard":"SELECT guild_id, user_id, balance FROM guild_bank WHERE guild_id = ? AND archived = 0 ORDER BY balance asc",
+        "select_user_active_lotto_tickets":"SELECT * FROM guild_lotto_tickets WHERE guild_id = ? AND user_id = ? AND archived = 0",
+        "select_user_historic_lotto_tickets":"SELECT * FROM guild_lotto_tickets WHERE guild_id = ? AND user_id = ? AND archived = 1",
+        "select_guild_active_lotto_tickets":"SELECT * FROM guild_lotto_tickets WHERE guild_id = ? and ticket_type = ? AND archived = 0"
     },
 
     "delete":{

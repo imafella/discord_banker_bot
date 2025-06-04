@@ -1,4 +1,4 @@
-import discord, asyncio, json
+import discord, asyncio, json, aiohttp
 import logging, datetime
 from zoneinfo import ZoneInfo
 import os, traceback
@@ -9,6 +9,9 @@ from Connections.DB_Connection import DatabaseConnection
 from Connections.malConnection import MALConnection
 from CommandTrees.Bank import Bank
 from CommandTrees import Roulette_Bet
+from CommandTrees.lotto import Lotto
+from CommandTrees.digimon_card import Card
+from Connections.GPT_Connection import GPTConnection
 
 
 #
@@ -37,6 +40,14 @@ bank = Bank()
 command_tree.add_command(bank)
 roulette = Roulette_Bet.Roulette()
 command_tree.add_command(roulette)
+roulette_tasks = {}
+lotto = Lotto()
+command_tree.add_command(lotto)
+lotto_tasks = {}
+digimon_card = Card()
+command_tree.add_command(digimon_card, guild=discord.Object(id=int(os.getenv("DIGIMON_GUILD_ID", "0"))))
+tyler_bot_config = utility.load_config("tyler_bot")
+tyler_bot = GPTConnection(name=tyler_bot_config["name"], instructions=tyler_bot_config["instructions"], model=tyler_bot_config["model"])
 
 
 async def get_guild_channel_by_name(guild:discord.Guild, channel_name:str):
@@ -61,16 +72,20 @@ async def get_random_guild_member(guild:discord.Guild) -> discord.Member:
 	# If no members are found, return None
 
 async def has_sent_message_today(channel: discord.TextChannel, search_string: str, client: discord.Client) -> bool:
-    now = datetime.datetime.now(ZoneInfo("America/St_Johns"))
-    today = now.date()
-    async for message in channel.history(limit=300):  # Adjust limit as needed
-        if (
-            message.author == client.user and
-            search_string in message.content and
-            message.created_at.date() == today
-        ):
-            return True
-    return False
+	now = datetime.datetime.now(ZoneInfo("America/St_Johns"))
+	today = now.date()
+	async for message in channel.history(limit=800):  # Adjust limit as needed
+		if message.author == client.user and message.created_at.date() == today:
+			# Check plain text content for the search string
+			if search_string in message.content :          
+				return True
+			for embed in message.embeds:
+				# Check embed title and description for the search string
+				if (embed.title and search_string in embed.title) or (embed.description and search_string in embed.description):
+					return True
+	return False
+
+
 
 async def get_anime_id(mal_url:str) -> int:
 	"""
@@ -86,6 +101,43 @@ async def get_anime_id(mal_url:str) -> int:
 			return None
 	else:
 		return None
+
+async def get_image(path:str) -> bytes:
+	"""
+	Get the image bytes from a file path.
+	"""
+	image_path = os.path.expanduser(path)  # Adjust filename as needed
+
+	if image_path != None and not os.path.exists(image_path):
+		return None
+        
+	return open(image_path, 'rb').read()
+
+async def get_bot_equivilant_emoji(emoji_name:str) -> str:
+	"""
+	Get the bot emoji as a string.
+	"""
+	watched_emoji_names = utility.load_config("emojis")['watched_emoji']
+
+	bot_emoji_name = emoji_name
+	if emoji_name in watched_emoji_names:
+		# If the emoji is in the watched emoji list, return the bot equivalent emoji
+		if bot_emoji_name in ["angry", "rage", "anger","😡","😠", "💢" ]:
+			bot_emoji_name = "angry"
+		elif bot_emoji_name in ["laughing", "joy","rotfl","😂","🤣","😆"]:
+			bot_emoji_name = "laugh"
+		elif bot_emoji_name in ["thumbsdown", "👎"]:
+			bot_emoji_name = "thumb_down"
+		elif bot_emoji_name in ["thumbsup","👍"]:
+			bot_emoji_name = "thumb_up"
+		elif bot_emoji_name in ["heart", "hearts","❤️","♥️",]:
+			bot_emoji_name = "heart"
+		elif bot_emoji_name in ["100", "hundred","💯"]:
+			bot_emoji_name = "100"
+		elif bot_emoji_name in ["open_mouth", "astonished", "😮","😲"]:
+			bot_emoji_name = "open_mouth"
+		bot_emoji_name = f"bot_{bot_emoji_name}"
+	return bot_emoji_name
 
 #
 # Timed things
@@ -105,6 +157,299 @@ async def change_avatar_periodically():
 		await client.user.edit(avatar=utility.load_random_avatar())
 		print(f"Changed avatar")
 		await asyncio.sleep(14 * 60 * 60)  # Change every 14 hours
+
+async def roulette_game(guild_id:int):
+	await client.wait_until_ready()
+	while not client.is_closed():
+		# await asyncio.sleep(15*2)
+		await asyncio.sleep(2*60)
+		# print(f"Checking for roulette bets")
+		# Check if there are any roulette bets to process
+		roulette_bets = database.get_placed_guild_roulette_bets(guild_id=guild_id)
+		if roulette_bets is None or len(roulette_bets) == 0:
+			# print("No roulette bets to process.")
+			continue
+		print(f"In Guild: {guild_id}, Found {len(roulette_bets)} roulette bets to process.")
+		guild = client.get_guild(guild_id)
+		channels = guild.text_channels
+		target_channel = None
+		for channel in channels:
+			if channel.name == "casino":
+				target_channel = channel
+				break
+		if target_channel is None:
+			print(f"No casino channel found in guild: {guild_id}.")
+			continue
+
+		# --- Embed timer logic ---
+		timer_seconds = 120
+		# timer_seconds = 30
+		embed = discord.Embed(
+            title="Roulette Wheel Spinning Soon!",
+            description=f"⏳ Time remaining: **{timer_seconds // 60}:{timer_seconds % 60:02d}**",
+            color=discord.Color.gold()
+        )
+		embed.set_footer(text="Place your bets now!")
+		message = await target_channel.send(embed=embed)
+
+		for remaining in range(timer_seconds - 1, -1, -1):
+			await asyncio.sleep(1)
+			if remaining % 10 == 0 or remaining < 10:  # Update every 10s, then every second for last 10s
+				embed.description = f"⏳ Time remaining: **{remaining // 60}:{remaining % 60:02d}**"
+				await message.edit(embed=embed)
+
+		embed.description = "⏰ **Last call is over.**"
+		embed.set_footer(text="The roulette wheel will spin shortly.")
+		await message.edit(embed=embed)
+
+		# --- End of embed timer logic ---
+		# Process the roulette bets
+		black_emoji = "⚫"
+		red_emoji = "🔴"
+		green_emoji = "🟢"
+		number = 0
+		color = "green"  # Start with green for the wheel
+		emoji_color = await roulette.get_roulette_roll_color(roll=0,use_emojis=True)
+		wheel = discord.Embed(
+            title="Roulette Wheel!",
+            description=f"{number}-{emoji_color}",
+            color=discord.Color.gold()
+        )
+		wheel.set_footer(text="Spinning the wheel...")
+		spin_msg = await target_channel.send(embed=wheel)
+		# Simulate the spinning of the wheel
+		for i in range(random.randint(10,60)):
+			await asyncio.sleep(0.5)
+			number += random.randint(1, 3)
+			if number > 36:
+				number = 0	
+			emoji_color = await roulette.get_roulette_roll_color(roll=number,use_emojis=True)
+			wheel.description = f"{number}-{emoji_color}"
+			await spin_msg.edit(embed=wheel)
+		await asyncio.sleep(0.5)
+		wheel.set_footer(text="The wheel is slowing down...")
+		await spin_msg.edit(embed=wheel)
+		for i in range(random.randint(5,15)):
+			await asyncio.sleep(1.5)
+			number += random.randint(1, 3)
+			if number > 36:
+				number = 0	
+			emoji_color = await roulette.get_roulette_roll_color(roll=number,use_emojis=True)
+			wheel.description = f"{number}-{emoji_color}"
+			await spin_msg.edit(embed=wheel)
+		await asyncio.sleep(1)
+
+		# Then send the result as usual
+		number = await roulette.roll_roulette()
+		color = await roulette.get_roulette_roll_color(roll=number)
+		emoji_color = await roulette.get_roulette_roll_color(roll=number,use_emojis=True)
+		result = {"number": number, "color": color}
+		
+		wheel.description = f"{number}-{emoji_color}"
+		
+		wheel.set_footer(text="The wheel has stopped spinning!")
+		await spin_msg.edit(embed=wheel)		
+
+		bets = database.get_placed_guild_roulette_bets(guild_id=guild_id)
+
+		bet_results = discord.Embed(
+            title="Roulette Bet Results!",
+            description=f"",
+            color=discord.Color.gold()
+        )
+
+		bet_output = ""
+		guild_currency = database.get_guild_currency_details(guild_id=guild_id)
+		currency_name = guild_currency[2] if guild_currency else "currency"
+		currency_symbol = guild_currency[3] if guild_currency else "$"
+		for bet in bets:
+			username = guild.get_member(bet['user_id']).mention
+			try:
+				bet_outcome = await roulette.apply_roulette_results(guild_id=guild_id, bet=bet, result=result)
+				account = database.get_user_bank_account_details(user_id=bet['user_id'], guild_id=guild_id)
+				balance = account[3] if account else 0
+				if bet_outcome[1]: # A win
+					bet_output += f"{username} won {bet_outcome[0]} for betting {bet['type']} on {bet['input']} with a bet of {bet['amount']}! New Balance of: {balance} {currency_name}s\n"
+				else:  # A loss
+					bet_output += f"{username} lost {bet['amount']} for betting {bet['type']} on {bet['input']}. New Balance of: {balance} {currency_name}s\n"
+			except Exception as e:
+				print(f"Error processing bet for user {bet['user_id']}: {e}")
+				traceback.print_exc()
+				continue
+
+		bet_results.description = bet_output if bet_output else "No bets were placed or all bets lost."
+		bet_results.set_footer(text="Thank you for playing!")
+
+		await target_channel.send(embed=bet_results)
+
+async def start_roulette_task(guild_id:int):
+    """
+    Start the roulette task for a specific guild.
+    """
+    global roulette_tasks
+    # If the task is not running or is done, start a new one
+    if guild_id not in roulette_tasks or roulette_tasks[guild_id].done():
+        task = asyncio.create_task(roulette_game(guild_id=guild_id))
+        roulette_tasks[guild_id] = task
+        print(f"Started roulette task for guild: {guild_id}")
+    else:
+        print(f"Roulette task already running for guild: {guild_id}")
+
+async def classic_lotto_game(guild_id:int):
+	"""
+	Classic Lotto game for a specific guild.
+	"""
+	await client.wait_until_ready()
+	while not client.is_closed():
+		# await asyncio.sleep(4 * 60 * 60)  # Check every 4 hours
+		await asyncio.sleep(2 * 60)
+		# checks for casino channel
+		channels = client.get_guild(guild_id).text_channels
+		if channels is None or len(channels) == 0:
+			print(f"No text channels found in guild: {guild_id}.")
+			continue
+		target_channel = None
+		for channel in channels:
+			if channel.name == "casino":
+				target_channel = channel
+				break
+		if target_channel is None:
+			print(f"No casino channel found in guild: {guild_id}.")
+			continue
+
+		# Post ad for lotto
+		if (utility.check_if_day(0) or utility.check_if_day(3)) and utility.check_if_past_time(16):
+			print(f"Posting Classic Lotto Ad for guild: {guild_id}")
+			lotto_ad = discord.Embed(
+				title="Classic Lotto Ad!",
+				description=f"Classic lotto being drawn tomorrow! Get your tickets now!",
+				color=discord.Color.red()
+			)
+			lotto_ad.set_footer(text=f"use '/lotto buy_classic_ticket' to get your ticket!")
+			# check if the lotto has already been drawn today
+			has_already_done_ad = await has_sent_message_today(channel=target_channel, search_string="Classic Lotto Ad!", client=client)
+			if has_already_done_ad:
+				print(f"Classic lotto ad has already been done today for guild: {guild_id}. Skipping.")
+				continue
+			await target_channel.send(embed=lotto_ad)
+			continue
+
+		# check if today is Tuesday or Friday
+		if not utility.is_classic_lotto_draw_day():  # or not utility.is_past_classic_lotto_draw_time()
+			print(f"Today is not a classic lotto day for guild: {guild_id}. Skipping.")
+			continue
+
+		# Post same day draw ad if it's a draw day and not past the draw time
+		if utility.is_classic_lotto_draw_day() and not utility.is_past_classic_lotto_draw_time() and utility.check_if_past_time(12):
+			# Post ad for lotto			
+			print(f"Posting Classic Lotto Ad for guild: {guild_id}")
+			lotto_ad = discord.Embed(
+					title="Classic Lotto Ad!",
+					description=f"Classic lotto being drawn later today! Get your tickets now!",
+					color=discord.Color.red()
+			)
+			lotto_ad.set_footer(text=f"use '/lotto buy_classic_ticket' to get your ticket!")
+			# check if the lotto has already been drawn today
+			has_already_done_ad = await has_sent_message_today(channel=target_channel, search_string="Classic Lotto Ad!", client=client)
+			if has_already_done_ad:
+				print(f"Classic lotto ad has already been done today for guild: {guild_id}. Skipping.")
+				continue
+			await target_channel.send(embed=lotto_ad)
+			continue
+
+		# Check if there are any classic lotto tickets to process
+		tickets = database.get_guild_typed_active_lotto_tickets(guild_id=guild_id, ticket_type=1)
+		if tickets is None or len(tickets) == 0:
+			print("No classic lotto tickets to process.")
+			continue
+
+		# check if the lotto has already been drawn today
+		has_already_drawn = await has_sent_message_today(channel=target_channel, search_string="Classic Lotto Draw!", client=client)
+		if has_already_drawn:
+			print(f"Classic lotto draw has already been done today for guild: {guild_id}. Skipping.")
+			continue
+		
+		# If we have tickets, process them
+		print(f"In Guild: {guild_id}, Found {len(tickets)} classic lotto tickets to process.")
+		# Do the lotto draw
+		classic_lotto_draw = await lotto.generate_classic_lotto_draw() # This way no late tickets are processed.
+		lotto_game_details = utility.load_config("lotto_config")["1"]  # Get the game type details
+		guild_currency = database.get_guild_currency_details(guild_id=guild_id)
+		if guild_currency is None:
+			print(f"Guild currency not found for guild: {guild_id}.")
+			continue
+
+		game_results = ""
+		for ticket in tickets:
+			user = client.get_user(ticket['user_id'])
+			if user is None:
+				try:
+					user = await client.fetch_user(ticket['user_id'])
+				except discord.NotFound:
+					print(f"User not found: {ticket['user_id']}")
+					continue			
+			
+			# Process the ticket
+			matches = await lotto.check_ticket_matches(ticket_type=1, ticket_numbers=ticket['ticket_numbers'].split(','), draw_numbers=classic_lotto_draw)
+			winnings = lotto_game_details['matches'][str(matches)]['winnings']
+			database.set_lotto_ticket_results(guild_id=guild_id, user_id=user.id, ticket_id=ticket['id'], matched=matches, winnings=winnings)
+			bank_account = database.get_user_bank_account_details(user_id=user.id, guild_id=guild_id)
+			if bank_account is None:
+				print(f"Bank account not found for user: {user.id} in guild: {guild_id}")
+				continue
+
+			new_balance_msg = f"New Balance: {guild_currency[3]}{bank_account[3]}"
+			if matches == 0:
+				game_results += f"{user.mention} did not win with ticket: {ticket['ticket_numbers']}. {new_balance_msg}\n"
+			if str(matches) == lotto_game_details['matches'].keys()[0]: # This is the jackpot match
+				game_results += f"{user.mention} won the jackpot of {winnings} with ticket: {ticket['ticket_numbers']} (Matched {matches} numbers). {new_balance_msg}\n"
+			else:
+				game_results += f"{user.mention} won {winnings} with ticket: {ticket['ticket_numbers']} (Matched {matches} numbers). Old Balance: {guild_currency[3]}{bank_account[3]}\n"
+		
+		## -- Play the lotto draw -- ##
+		lotto_draw = discord.Embed(
+			title="Classic Lotto Draw!",
+			description=f"Today's draw numbers are:",
+			color=discord.Color.red()
+		)
+		lotto_draw.set_footer(text=f"Now Drawing for {lotto_game_details['name']}")
+
+		# Send the draw numbers one by one
+		message = await target_channel.send(embed=lotto_draw)
+
+		for number in classic_lotto_draw:
+			await asyncio.sleep(4)  # Give the bot a break between numbers
+			lotto_draw.description += f" {number}"
+			message = await message.edit(embed=lotto_draw)
+		lotto_draw.set_footer(text=f"Draw complete for {lotto_game_details['name']}")
+		await message.edit(embed=lotto_draw)
+		## -- End Play the lotto draw -- ##
+
+		## -- Display the lotto Results -- ##
+		lotto_results = discord.Embed(
+			title="Classic Lotto Results!",
+			description=f"Today's results are:\n{game_results}",
+			color=discord.Color.red()
+		)
+		lotto_draw.set_footer(text=f"Thanks for playing!")
+
+		# Send the draw results
+		await target_channel.send(embed=lotto_results)
+
+async def start_classic_lotto_task(guild_id:int):
+	"""
+	Start the classic lotto task for a specific guild.
+	"""
+	global lotto_tasks
+	# If the task is not running or is done, start a new one
+	if "classic_lotto" not in lotto_tasks:
+		lotto_tasks["classic_lotto"] = {}
+	if guild_id not in lotto_tasks["classic_lotto"] or lotto_tasks["classic_lotto"][guild_id].done():
+		task = asyncio.create_task(classic_lotto_game(guild_id=guild_id))
+		lotto_tasks["classic_lotto"][guild_id] = task
+		print(f"Started classic lotto task for guild: {guild_id}")
+	else:
+		print(f"Classic lotto task already running for guild: {guild_id}")
 
 async def give_allowance():
 	"""
@@ -159,11 +504,17 @@ async def give_allowance():
 								if member is None:
 									print(f"Member not found: {account['user_id']}")
 									continue
+							bank_account = database.get_user_bank_account_details(user_id=account['user_id'], guild_id=guild)
+							if bank_account is None:
+								print(f"Bank account not found for user: {account['user_id']} in guild: {guild}")
+								continue
+							new_balance_msg = f"New Balance: {currency_symbol}{bank_account[2]+account['amount']}"
 							
-							output += f"{member.mention} has received {currency_symbol}{account['amount']} for their allowance.\n"
+							output += f"{member.mention} has received {currency_symbol}{account['amount']} for their allowance. {new_balance_msg}\n"
 						
 						# Actually give out the allowance after numerous checks have been made.
 						database.give_allowance(allowance_info=allowance_list[guild])
+
 						await channel.send(output)
 						print(output)
 						await asyncio.sleep(5)
@@ -171,6 +522,16 @@ async def give_allowance():
 			has_given_allowance_today = True
 
 		await asyncio.sleep(6 * 60 * 60)  # every 6 hours check the day.
+
+async def get_guild_emoji(guild:discord.Guild, emoji_name:str) -> discord.Emoji:
+	"""
+	Get a custom emoji from a guild by name.
+	"""
+	for emoji in guild.emojis:
+		if emoji.name == emoji_name:
+			return emoji
+	return None
+	# If no emoji is found, return None
 
 #
 #Events
@@ -191,10 +552,7 @@ async def on_member_join(member:discord.Member):
 @client.event
 async def on_ready():
 	try:
-		app_command_list = await command_tree.sync()
-		print(f"The Following commands have been synced:\n")
-		for command in app_command_list:
-			print(f"{command.name} - {command.description}\n")
+		await command_tree.sync()
 	except discord.HTTPException as e:
 		print(f"Failed to sync command tree: {e}")
 		logging.error("Failed to sync command tree: %s", e)
@@ -202,6 +560,13 @@ async def on_ready():
 	client.loop.create_task(change_presense_periodically())
 	client.loop.create_task(change_avatar_periodically())
 	client.loop.create_task(give_allowance())
+
+	await command_tree.sync(guild=discord.Object(id=int(os.getenv("DIGIMON_GUILD_ID", "0"))))  # Sync the digimon card commands to the digimon guild
+	await ensure_emojis_in_guilds(client)
+	
+	for guild in client.guilds:
+		await start_roulette_task(guild_id=guild.id)
+		await start_classic_lotto_task(guild_id=guild.id)
 
 	print("Hello, I am online!")
 	print('Connected to bot: {}'.format(client.user.name))
@@ -232,16 +597,33 @@ async def on_message(message:discord.Message):
 	if message.author == client.user:
 		return
 	
+	if "69" in message.content:
+		database.incriment_bot_usage(guild_id=message.guild.id, user_id=message.author.id)
+		await message.reply(pickRandomNiceResponse())
+
+	if "420" in message.content:
+		database.incriment_bot_usage(guild_id=message.guild.id, user_id=message.author.id)
+		await message.reply(pickRandomWeedResponse())
+
 	if client.user in message.mentions:
+		database.incriment_bot_usage(guild_id=message.guild.id, user_id=message.author.id)
 		await message.channel.send(pickRandomBotMentionResponse(username=message.author.mention, fail_msg="I broke myself trying to respond to you."))
 	
 	if "http" in message.content and "myanimelist" in message.content:
+		database.incriment_bot_usage(guild_id=message.guild.id, user_id=message.author.id)
 		# example https://myanimelist.net/anime/205/Samurai_Champloo or https://myanimelist.net/anime/205
 		anime_id = await get_anime_id(mal_url=message.content)
 		if anime_id is None:
 			return
 		mal_response = await mal_connection.get_anime_details(anime_id=anime_id)
 		await message.channel.send(detail_MAL_Anime_Response(mal_response=mal_response, username=message.author.mention))
+
+	if isinstance(message.channel, discord.DMChannel) and message.author.id in [390043861302509568, 259431114286956544]:  # Check if the message is a DM to the bot from megan
+		# This is a private message (DM) to the bot
+		await tyler_bot.add_message(role="user", content=message.content)
+		response = await tyler_bot.get_msg_response()
+		await message.channel.send(response)
+		return
 
 @client.event
 async def on_reaction_add(reaction:discord.Reaction, user:discord.User):
@@ -253,13 +635,24 @@ async def on_reaction_add(reaction:discord.Reaction, user:discord.User):
 	
 	if random.randint(1, 100) >= 75:
 		try:
+			database.incriment_bot_usage(guild_id=reaction.guild.id, user_id=reaction.author.id)
+			emoji_name = reaction.emoji.name if isinstance(reaction.emoji, discord.Emoji) else str(reaction.emoji)
+			emoji_name_to_add = await get_bot_equivilant_emoji(emoji_name=emoji_name)
+			if "bot" in emoji_name_to_add:
+				emoji_to_add = await get_guild_emoji(guild=reaction_message.guild, emoji_name=emoji_name_to_add)
+				await reaction_message.add_reaction(emoji_to_add)
+				print(f"Added reaction: {emoji_to_add.name} to message by user: {reaction_message.author.name}")
+				return
+			
 			await reaction_message.add_reaction(reaction.emoji)
-			print(f"Added reaction: {reaction.emoji.name} to message by user: {reaction_message.author.name}")
+			print(f"Added reaction: {reaction.emoji} to message by user: {reaction_message.author.name}")
 		except Exception as e:
 			logging.error(f"Failed to add reaction: {e}")
 	return
+
+
 #
-#Commands
+# General Commands
 #
 
 @command_tree.command(name="roll",description="Roll a die. XdY + Z")
@@ -292,11 +685,6 @@ async def yell(interaction: discord.Interaction, member:discord.Member=None):
 	await interaction.response.send_message(content=pickRandomYell(username=target_username))
 
 
-@command_tree.command(name="test",description="this is for testing. Leave it alone.")
-async def test(interaction: discord.Interaction, member:discord.Member):
-	database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
-	username = interaction.user.mention
-	await interaction.response.send_message(content=f"Hello {username}, I am a test command. You also mentioned {member.mention}. Don't do that.")
 
 @command_tree.command(name="flip",description="Flips the table")
 async def flip(interaction: discord.Interaction):
@@ -330,373 +718,24 @@ async def random_selection(interaction: discord.Interaction, options:str):
 	selected_option = random.choice(options_list)
 	await interaction.response.send_message(content=f"Options: {str(options_list)}\n\n{pickRandomSelectionResponse(username=username, choice=selected_option)}")
 
-# #
-# #Banking commands
-# #
-
-# @command_tree.command(name="join_bank",description="Make a bank account. Join the server bank. One of us.")
-# async def join_bank(interaction: discord.Interaction):
-
-# 	# Acknowledge the interaction immediately
-# 	await interaction.response.defer()
-
-# 	username = interaction.user.id
-# 	if interaction.guild is None:
-# 		await interaction.followup.send(content="You need to be in a server to join the bank.")
-# 		return
-# 	guild_id = interaction.guild.id
-
-# 	# Check if the guild has its own bank
-# 	if not database.is_guild_bank_setup(guild_id):
-# 		database.set_up_guild_bank(guild_id)
-
-# 	guild_currency = database.get_guild_currency_details(guild_id=guild_id)
-
-# 	# Check if the user is already in the bank
-# 	if database.is_user_in_guild_bank(username, guild_id):
-# 		bank_account = database.get_user_bank_account_details(user_id=username, guild_id=guild_id)
-# 		await interaction.followup.send(content=pickRandomYouAlreadyHaveAnAccountResponse(username=interaction.user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3], bank_balance=bank_account[3]))
-# 		return
-	
-# 	if database.is_user_bank_account_archived(username, guild_id):
-# 		did_the_thing = database.unarchive_user_bank_account(user_id=username, guild_id=guild_id)
-# 	else:
-# 		did_the_thing = database.add_user_to_guild_bank(user_id=username, guild_id=guild_id)
-# 	if not did_the_thing:
-# 		await interaction.followup.send(content="I broke myself trying to add you to the bank.")
-# 		return
-	
-# 	bank_account = database.get_user_bank_account_details(user_id=username, guild_id=guild_id)
-	
-# 	database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
-
-	
-# 	await interaction.followup.send(content=pickRandomBankWelcomeResponse(username=interaction.user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3], bank_balance=bank_account[3]))
-# 	return
-
-
-# @command_tree.command(name="bank_balance",description="Get your bank balance.")
-# async def bank_balance(interaction: discord.Interaction):
-# 	database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
-# 	user_id = interaction.user.id
-# 	if interaction.guild is None:
-# 		await interaction.response.send_message(content="You need to be in a server to check your bank balance.")
-# 		return
-# 	guild_id = interaction.guild.id
-
-# 	# Check if the guild has its own bank
-# 	if not database.is_guild_bank_setup(guild_id):
-# 		database.set_up_guild_bank(guild_id)
-
-# 	guild_currency = database.get_guild_currency_details(guild_id=guild_id)
-
-# 	# Check if the user is already in the bank
-# 	if not database.is_user_in_guild_bank(user_id, guild_id):
-# 		await interaction.response.send_message(content=pickRandomYouDontHaveAnAccountResponse(username=interaction.user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3]))
-# 		return
-	
-# 	bank_account = database.get_user_bank_account_details(user_id, guild_id)
-# 	if bank_account is None:
-# 		await interaction.response.send_message(content="I broke myself trying to get your bank balance.")
-# 		return
-	
-# 	await interaction.response.send_message(content=pickRandomBankBalanceResponse(username=interaction.user.mention, bank_balance=bank_account[3], currency_name=guild_currency[2], currency_symbol=guild_currency[3]))
-
-# @command_tree.command(name="leave_bank",description="Close your bank account.")
-# async def leave_bank(interaction: discord.Interaction):
-# 	database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
-# 	user_id = interaction.user.id
-# 	if interaction.guild is None:
-# 		await interaction.response.send_message(content="You need to be in a server to close your bank account.")
-# 		return
-# 	guild_id = interaction.guild.id
-
-# 	# Check if the guild has its own bank
-# 	if not database.is_guild_bank_setup(guild_id=guild_id):
-# 		database.set_up_guild_bank(guild_id=guild_id)
-
-# 	guild_currency = database.get_guild_currency_details(guild_id=guild_id)
-
-# 	# Check if the user is already in the bank
-# 	if not database.is_user_in_guild_bank(user_id=user_id, guild_id=guild_id):
-# 		await interaction.response.send_message(content=pickRandomYouDontHaveAnAccountResponse(username=interaction.user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3]))
-# 		return
-	
-# 	bank_account = database.get_user_bank_account_details(user_id=user_id, guild_id=guild_id)
-	
-# 	did_the_thing = database.remove_user_from_guild_bank(guild_id= guild_id,user_id=user_id)
-# 	if not did_the_thing:
-# 		await interaction.response.send_message(content=f"I broke myself trying to remove you from the bank. I blame you, {interaction.user.mention}.")
-# 		return
-	
-# 	await interaction.response.send_message(content=pickRandomLeavingTheBankResponse(username=interaction.user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3], bank_balance=bank_account[3]))
-
-# @command_tree.command(name="get_change_costs",description="Get the costs of changing the currency name and symbol.")
-# async def get_change_costs(interaction: discord.Interaction):
-# 	database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
-# 	if interaction.guild is None:
-# 		await interaction.response.send_message(content="You need to be in a server to get the change costs.")
-# 		return
-# 	guild_id = interaction.guild.id
-
-# 	# Check if the guild has its own bank
-# 	if not database.is_guild_bank_setup(guild_id=guild_id):
-# 		database.set_up_guild_bank(guild_id=guild_id)
-
-# 	guild_currency = database.get_guild_currency_details(guild_id=guild_id)
-# 	guild_currency_change_costs = database.get_change_costs(guild_id=guild_id)
-# 	if guild_currency_change_costs is None:
-# 		await interaction.response.send_message(content="I broke myself trying to get the change costs.")
-# 		return
-	
-# 	await interaction.response.send_message(content=pickRandomChangeCostResponse(username=interaction.user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3], name_cost=guild_currency_change_costs[2], symbol_cost=guild_currency_change_costs[3]))
-
-# @command_tree.command(name="change_currency_name",description="Change the currency name.")
-# async def change_currency_name(interaction: discord.Interaction, new_currency_name:str):
-# 	database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
-# 	if interaction.guild is None:
-# 		await interaction.response.send_message(content="You need to be in a server to change the currency name.")
-# 		return
-# 	guild_id = interaction.guild.id
-# 	user_id=interaction.user.id
-
-# 	# Check if the guild has its own bank
-# 	if not database.is_guild_bank_setup(guild_id=guild_id):
-# 		database.set_up_guild_bank(guild_id=guild_id)
-
-# 	if len(new_currency_name) > 50:
-# 		await interaction.response.send_message(content="The currency name can't be longer than 50 characters.")
-# 		return
-
-# 	guild_currency = database.get_guild_currency_details(guild_id=guild_id)
-# 	guild_currency_change_costs = database.get_change_costs(guild_id=guild_id)
-
-# 	if new_currency_name.strip() == "":
-# 		await interaction.response.send_message(content="The currency name can't be empty.")
-# 		return
-
-# 	# Check if new currency name contains letters
-# 	if not any(char.isalpha() for char in new_currency_name):
-# 		await interaction.response.send_message(content="The currency name must contain at least one letter.")
-# 		return
-
-# 	if guild_currency[2] == new_currency_name:
-# 		#TODO pickRandomThatChangesNothingResponse
-# 		await interaction.response.send_message(content="The currency name is already set to that ya daft monkey.")
-# 		return
-	
-# 	if guild_currency_change_costs is None:
-# 		await interaction.response.send_message(content="I broke myself trying to get the change costs.")
-# 		return
-	
-# 	bank_account = database.get_user_bank_account_details(user_id=user_id, guild_id=guild_id)
-# 	if bank_account is None:
-# 		await interaction.response.send_message(content=pickRandomYouDontHaveAnAccountResponse(username=interaction.user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3]))
-# 		return
-	
-# 	if bank_account[3] < guild_currency_change_costs[2]:
-# 		#TODO pickRandomYouDontHaveEnoughMoneyResponse
-# 		await interaction.response.send_message(content="You don't have enough money to change the currency name.")
-# 		return
-	
-# 	did_the_thing = database.change_currency_name(guild_id=guild_id, new_name=new_currency_name, user_id=user_id, cost=guild_currency_change_costs[2], balance=bank_account[3])
-# 	if not did_the_thing:
-# 		await interaction.response.send_message(content="I broke myself trying to change the currency name.")
-# 		return
-# 	#TODO pickRandomChangeCurrencyNameResponse
-# 	await interaction.response.send_message(content=f"Changed the currency name to {new_currency_name}.")
-
-# @command_tree.command(name="change_currency_symbol",description="Change the currency symbol.")
-# async def change_currency_symbol(interaction: discord.Interaction, new_currency_symbol:str):
-# 	database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
-# 	if interaction.guild is None:
-# 		await interaction.response.send_message(content="You need to be in a server to change the currency symbol.")
-# 		return
-# 	guild_id = interaction.guild.id
-# 	user_id=interaction.user.id
-
-# 	# Check if the guild has its own bank
-# 	if not database.is_guild_bank_setup(guild_id=guild_id):
-# 		database.set_up_guild_bank(guild_id=guild_id)
-
-# 	guild_currency = database.get_guild_currency_details(guild_id=guild_id)
-# 	guild_currency_change_costs = database.get_change_costs(guild_id=guild_id)
-
-# 	if new_currency_symbol.strip() == "":
-# 		await interaction.response.send_message(content="The currency symbol can't be empty.")
-# 		return
-	
-# 	if len(new_currency_symbol) > 50:
-# 		await interaction.response.send_message(content="The currency symbol can't be longer than 50 characters.")
-# 		return
-
-# 	if guild_currency[3] == new_currency_symbol:
-# 		#TODO pickRandomThatChangesNothingResponse
-# 		await interaction.response.send_message(content="The currency symbol is already set to that ya daft monkey.")
-# 		return
-	
-# 	if guild_currency_change_costs is None:
-# 		await interaction.response.send_message(content="I broke myself trying to get the change costs.")
-# 		return
-	
-# 	bank_account = database.get_user_bank_account_details(user_id=user_id, guild_id=guild_id)
-# 	if bank_account is None:
-# 		await interaction.response.send_message(content=pickRandomYouDontHaveAnAccountResponse(username=interaction.user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3]))
-# 		return
-	
-# 	if bank_account[3] < guild_currency_change_costs[3]:
-# 		#TODO pickRandomYouDontHaveEnoughMoneyResponse
-# 		await interaction.response.send_message(content="You don't have enough money to change the currency symbol.")
-# 		return
-	
-# 	did_the_thing = database.change_currency_symbol(guild_id=guild_id, new_symbol=new_currency_symbol, user_id=user_id, cost=guild_currency_change_costs[3], balance=bank_account[3])
-# 	if not did_the_thing:
-# 		await interaction.response.send_message(content="I broke myself trying to change the currency symbol.")
-# 		return
-# 	#TODO pickRandomChangeCurrencySymbolResponse
-# 	await interaction.response.send_message(content=f"Changed the currency symbol to {new_currency_symbol}.")
-
-# #TODO transfer_money
-# @command_tree.command(name="transfer_money",description="Transfer money to another user.")
-# async def transfer_money(interaction: discord.Interaction, user:discord.User, amount:float):
-# 	database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
-# 	if interaction.guild is None:
-# 		await interaction.response.send_message(content="You need to be in a server to transfer money.")
-# 		return
-# 	guild_id = interaction.guild.id
-# 	user_id=interaction.user.id
-
-# 	if amount < 0:
-# 		await interaction.response.send_message(content="You can't transfer a negative amount of money.")
-# 		return
-# 	if amount == 0:
-# 		await interaction.response.send_message(content="You can't transfer 0.")
-# 		return
-
-# 	# Check if the guild has its own bank
-# 	if not database.is_guild_bank_setup(guild_id=guild_id):
-# 		database.set_up_guild_bank(guild_id=guild_id)
-
-# 	guild_currency = database.get_guild_currency_details(guild_id=guild_id)
-
-# 	# Check if the user is already in the bank
-# 	if not database.is_user_in_guild_bank(user_id=user_id, guild_id=guild_id):
-# 		await interaction.response.send_message(content=pickRandomYouDontHaveAnAccountResponse(username=interaction.user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3]))
-# 		return
-	
-# 	# Check is target user is in the bank
-# 	if not database.is_user_in_guild_bank(user.id, guild_id=guild_id):
-# 		await interaction.response.send_message(content=pickRandomYouDontHaveAnAccountResponse(username=user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3]))
-# 		return
-	
-# 	bank_account = database.get_user_bank_account_details(user_id=user_id, guild_id=guild_id)
-# 	if bank_account is None:
-# 		await interaction.response.send_message(content="I broke myself trying to get your bank balance.")
-# 		return
-	
-# 	if bank_account[3] < amount:
-# 		#TODO pickRandomYouDontHaveEnoughMoneyResponse
-# 		await interaction.response.send_message(content="You don't have enough money to transfer.")
-# 		return
-	
-# 	did_the_thing = database.transfer_money(guild_id=guild_id, sender_user_id=user_id, receiver_user_id=user.id, amount=amount)
-# 	if not did_the_thing:
-# 		await interaction.response.send_message(content="I broke myself trying to transfer money.")
-# 		return
-# 	#TODO pickRandomTransferMoneyResponse
-# 	await interaction.response.send_message(content=f"Transferred {amount} {guild_currency[3]}s from {interaction.user.mention} to {user.mention}.")
-# #TODO give_allowance. weekly increase balance if member has used imabot (not banking functions) in the last week
-
-# @command_tree.command(name="award",description="Award money to a user. Bank Admin Command.")
-# async def award(interaction: discord.Interaction, user:discord.User, amount:float):
-# 	database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
-# 	if interaction.guild is None:
-# 		await interaction.response.send_message(content="You need to be in a server to award money.")
-# 		return
-# 	guild_id = interaction.guild.id
-
-# 	# Check if the guild has its own bank
-# 	if not database.is_guild_bank_setup(guild_id=guild_id):
-# 		database.set_up_guild_bank(guild_id=guild_id)
-
-# 	guild_currency = database.get_guild_currency_details(guild_id=guild_id)
-
-# 	# Check if the awarding user is an admin
-# 	if interaction.user.id not in admins:
-# 		await interaction.response.send_message(content=f"{interaction.user.mention}, You are not allowed to award money.")
-# 		return
-	
-# 	# Check is target user is in the bank
-# 	if not database.is_user_in_guild_bank(user.id, guild_id=guild_id):
-# 		await interaction.response.send_message(content=pickRandomYouDontHaveAnAccountResponse(username=user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3]))
-# 		return
-	
-# 	bank_account = database.get_user_bank_account_details(user_id=user.id, guild_id=guild_id)
-# 	if bank_account is None:
-# 		await interaction.response.send_message(content="I broke myself trying to get your bank balance.")
-# 		return
-	
-# 	did_the_thing = database.award_money(guild_id=guild_id, user_id=user.id, amount=amount)
-# 	if not did_the_thing:
-# 		await interaction.response.send_message(content="I broke myself trying to award money.")
-# 		return
-# 	#TODO pickRandomAwardMoneyResponse
-# 	await interaction.response.send_message(content=f"Awarded {amount} {guild_currency[3]}s to {user.mention}.")
-
-# @command_tree.command(name="set_bank_balance",description="Set the bank balance of a user.")
-# async def set_bank_balance(interaction: discord.Interaction, user:discord.User, amount:float):
-# 	database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
-# 	if interaction.guild is None:
-# 		await interaction.response.send_message(content="You need to be in a server to set the bank balance.")
-# 		return
-# 	guild_id = interaction.guild.id
-
-# 	# Check if the guild has its own bank
-# 	if not database.is_guild_bank_setup(guild_id=guild_id):
-# 		database.set_up_guild_bank(guild_id=guild_id)
-
-# 	guild_currency = database.get_guild_currency_details(guild_id=guild_id)
-
-# 	# Check if the awarding user is an admin
-# 	if interaction.user.id not in admins:
-# 		await interaction.response.send_message(content=f"{interaction.user.mention}, You are not allowed to set the bank balance.")
-# 		return
-	
-# 	# Check is target user is in the bank
-# 	if not database.is_user_in_guild_bank(user.id, guild_id=guild_id):
-# 		await interaction.response.send_message(content=pickRandomYouDontHaveAnAccountResponse(username=user.mention, currency_name=guild_currency[2], currency_symbol=guild_currency[3]))
-# 		return
-	
-# 	bank_account = database.get_user_bank_account_details(user_id=user.id, guild_id=guild_id)
-# 	if bank_account is None:
-# 		await interaction.response.send_message(content="I broke myself trying to get your bank balance.")
-# 		return
-	
-# 	did_the_thing = database.set_bank_balance(guild_id=guild_id, user_id=user.id, amount=amount)
-# 	if not did_the_thing:
-# 		await interaction.response.send_message(content="I broke myself trying to set the bank balance.")
-# 		return
-# 	#TODO pickRandomSetBankBalanceResponse
-# 	await interaction.response.send_message(content=f"Set {user.mention}'s bank balance to {amount}.")
-
-# @command_tree.command(name="get_currency_details",description="Get the currency details.")
-# async def get_currency_details(interaction: discord.Interaction):
-# 	database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
-# 	if interaction.guild is None:
-# 		await interaction.response.send_message(content="You need to be in a server to get the currency details.")
-# 		return
-# 	guild_id = interaction.guild.id
-
-# 	# Check if the guild has its own bank
-# 	if not database.is_guild_bank_setup(guild_id=guild_id):
-# 		database.set_up_guild_bank(guild_id=guild_id)
-
-# 	guild_currency = database.get_guild_currency_details(guild_id=guild_id)
-# 	if guild_currency is None:
-# 		await interaction.response.send_message(content="I broke myself trying to get the currency details.")
-# 		return
-	
-# 	await interaction.response.send_message(content=f"The currency name is {guild_currency[2]} and the symbol is {guild_currency[3]}.")
+async def ensure_emojis_in_guilds(client: discord.Client):
+	"""
+	Ensures all custom emojis in emoji_data are present in every guild the client is in.
+	emoji_data should be a dict: {emoji_name: emoji_image_bytes}
+	"""
+	bot_emojis= utility.load_config("emojis")['emoji_list'] # {name, path}
+	for guild in client.guilds:
+		existing_emojis = {e.name for e in guild.emojis} # list of existing emoji names in the guild
+		for bot_emoji in bot_emojis:
+			emoji_bytes = await get_image(path=bot_emoji['path'])
+			emoji_name = f"bot_{bot_emoji['name']}"
+			if emoji_name not in existing_emojis:
+				try:					
+					await guild.create_custom_emoji(name=emoji_name, image=emoji_bytes)
+					print(f"Created emoji '{emoji_name}' in guild '{guild.name}'")
+				except Exception as e:
+					print(f"Failed to create emoji '{emoji_name}' in guild '{guild.name}': {e}")
+					continue
 
 #Runs the bot		
 client.run(TOKEN)

@@ -1,0 +1,41 @@
+{
+    "emoji_list":[
+        {
+            "name":"heart",
+            "path":"/home/imafella/Documents/Development/discord_banker_bot/Pictures/bot_heart_icon.png"
+        },
+        {
+            "name":"100",
+            "path":"/home/imafella/Documents/Development/discord_banker_bot/Pictures/bot_100_icon.png"
+        },
+        {
+            "name":"angry",
+            "path":"/home/imafella/Documents/Development/discord_banker_bot/Pictures/bot_angry_icon.png"
+        },
+        {
+            "name":"laugh",
+            "path":"/home/imafella/Documents/Development/discord_banker_bot/Pictures/bot_laugh_icon.png"
+        },
+        {
+            "name":"open_mouth",
+            "path":"/home/imafella/Documents/Development/discord_banker_bot/Pictures/bot_open_mouth_icon.png"
+        },
+        {
+            "name":"thumb_up",
+            "path":"/home/imafella/Documents/Development/discord_banker_bot/Pictures/bot_thumb_up-2_icon.png"
+        },
+        {
+            "name":"thumb_down",
+            "path":"/home/imafella/Documents/Development/discord_banker_bot/Pictures/bot_thumb_down-2_icon.png"
+        }
+    ],
+    "watched_emoji":[
+        "angry", "rage", "anger","😡","😠", "💢" , 
+        "laughing", "joy","rotfl","😂","🤣","😆",
+        "thumbsdown", "👎",
+        "thumbsup","👍", 
+        "open_mouth", "astonished", "😮","😲",
+        "heart", "hearts","❤️","♥️",
+        "100", "hundred","💯"
+    ]
+}
