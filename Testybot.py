@@ -301,8 +301,8 @@ async def classic_lotto_game(guild_id:int):
 	"""
 	await client.wait_until_ready()
 	while not client.is_closed():
-		# await asyncio.sleep(4 * 60 * 60)  # Check every 4 hours
-		await asyncio.sleep(2 * 60)
+		await asyncio.sleep(2 * 60 * 60)  # Check every 2 hours
+
 		# checks for casino channel
 		channels = client.get_guild(guild_id).text_channels
 		if channels is None or len(channels) == 0:
@@ -317,21 +317,9 @@ async def classic_lotto_game(guild_id:int):
 			print(f"No casino channel found in guild: {guild_id}.")
 			continue
 
-		# Post ad for lotto
+		# Post ad for tomorrow classic lotto
 		if (utility.check_if_day(0) or utility.check_if_day(3)) and utility.check_if_past_time(16):
-			print(f"Posting Classic Lotto Ad for guild: {guild_id}")
-			lotto_ad = discord.Embed(
-				title="Classic Lotto Ad!",
-				description=f"Classic lotto being drawn tomorrow! Get your tickets now!",
-				color=discord.Color.red()
-			)
-			lotto_ad.set_footer(text=f"use '/lotto buy_classic_ticket' to get your ticket!")
-			# check if the lotto has already been drawn today
-			has_already_done_ad = await has_sent_message_today(channel=target_channel, search_string="Classic Lotto Ad!", client=client)
-			if has_already_done_ad:
-				print(f"Classic lotto ad has already been done today for guild: {guild_id}. Skipping.")
-				continue
-			await target_channel.send(embed=lotto_ad)
+			await lotto_ad(guild_id=guild_id, target_channel=target_channel, title="Classic Lotto Ad!", description="Classic lotto being drawn tomorrow! Get your tickets now!", footer="use '/lotto buy_classic_ticket' to get your ticket!", color=discord.Color.red())
 			continue
 
 		# check if today is Tuesday or Friday
@@ -342,20 +330,11 @@ async def classic_lotto_game(guild_id:int):
 		# Post same day draw ad if it's a draw day and not past the draw time
 		if utility.is_classic_lotto_draw_day() and not utility.is_past_classic_lotto_draw_time() and utility.check_if_past_time(12):
 			# Post ad for lotto			
-			print(f"Posting Classic Lotto Ad for guild: {guild_id}")
-			lotto_ad = discord.Embed(
-					title="Classic Lotto Ad!",
-					description=f"Classic lotto being drawn later today! Get your tickets now!",
-					color=discord.Color.red()
-			)
-			lotto_ad.set_footer(text=f"use '/lotto buy_classic_ticket' to get your ticket!")
-			# check if the lotto has already been drawn today
-			has_already_done_ad = await has_sent_message_today(channel=target_channel, search_string="Classic Lotto Ad!", client=client)
-			if has_already_done_ad:
-				print(f"Classic lotto ad has already been done today for guild: {guild_id}. Skipping.")
-				continue
-			await target_channel.send(embed=lotto_ad)
+			await lotto_ad(guild_id=guild_id, target_channel=target_channel, title="Classic Lotto Ad!", description="Classic lotto being drawn later today! Get your tickets now!", footer="use '/lotto buy_classic_ticket' to get your ticket!", color=discord.Color.red())
 			continue
+
+		if utility.is_classic_lotto_draw_day() and not utility.is_past_classic_lotto_draw_time():
+			continue  # If it's a draw day but not past the draw time, skip the draw
 
 		# Check if there are any classic lotto tickets to process
 		tickets = database.get_guild_typed_active_lotto_tickets(guild_id=guild_id, ticket_type=1)
@@ -392,7 +371,7 @@ async def classic_lotto_game(guild_id:int):
 			# Process the ticket
 			matches = await lotto.check_ticket_matches(ticket_type=1, ticket_numbers=ticket['ticket_numbers'].split(','), draw_numbers=classic_lotto_draw)
 			winnings = lotto_game_details['matches'][str(matches)]['winnings']
-			database.set_lotto_ticket_results(guild_id=guild_id, user_id=user.id, ticket_id=ticket['id'], matched=matches, winnings=winnings)
+			database.set_lotto_ticket_results(guild_id=guild_id, user_id=user.id, ticket_id=ticket['id'], matches=matches, winnings=winnings)
 			bank_account = database.get_user_bank_account_details(user_id=user.id, guild_id=guild_id)
 			if bank_account is None:
 				print(f"Bank account not found for user: {user.id} in guild: {guild_id}")
@@ -401,7 +380,7 @@ async def classic_lotto_game(guild_id:int):
 			new_balance_msg = f"New Balance: {guild_currency[3]}{bank_account[3]}"
 			if matches == 0:
 				game_results += f"{user.mention} did not win with ticket: {ticket['ticket_numbers']}. {new_balance_msg}\n"
-			if str(matches) == lotto_game_details['matches'].keys()[0]: # This is the jackpot match
+			elif str(matches) == list(lotto_game_details['matches'].keys())[0]: # This is the jackpot match
 				game_results += f"{user.mention} won the jackpot of {winnings} with ticket: {ticket['ticket_numbers']} (Matched {matches} numbers). {new_balance_msg}\n"
 			else:
 				game_results += f"{user.mention} won {winnings} with ticket: {ticket['ticket_numbers']} (Matched {matches} numbers). Old Balance: {guild_currency[3]}{bank_account[3]}\n"
@@ -418,7 +397,7 @@ async def classic_lotto_game(guild_id:int):
 		message = await target_channel.send(embed=lotto_draw)
 
 		for number in classic_lotto_draw:
-			await asyncio.sleep(4)  # Give the bot a break between numbers
+			await asyncio.sleep(8)  # Give the bot a break between numbers
 			lotto_draw.description += f" {number}"
 			message = await message.edit(embed=lotto_draw)
 		lotto_draw.set_footer(text=f"Draw complete for {lotto_game_details['name']}")
@@ -435,6 +414,21 @@ async def classic_lotto_game(guild_id:int):
 
 		# Send the draw results
 		await target_channel.send(embed=lotto_results)
+
+async def lotto_ad(guild_id:int, target_channel:discord.TextChannel, title:str, description:str, footer:str,color:discord.Color):
+	print(f"Posting Classic Lotto Ad for guild: {guild_id}")
+	lotto_ad = discord.Embed(
+				title=title,
+				description=description,
+				color=color
+	)
+	lotto_ad.set_footer(text=footer)
+	# check if the ad has already been posted today
+	has_already_done_ad = await has_sent_message_today(channel=target_channel, search_string=title, client=client)
+	if not has_already_done_ad:
+		await target_channel.send(embed=lotto_ad)
+	else:
+		print(f"{title} ad has already been done today for guild: {guild_id}. Skipping.")
 
 async def start_classic_lotto_task(guild_id:int):
 	"""
@@ -458,7 +452,13 @@ async def give_allowance():
 	"""
 	await client.wait_until_ready()
 	global has_given_allowance_today
+	has_checked_once = False
 	while not client.is_closed():
+		
+		if has_checked_once:
+			await asyncio.sleep(6 * 60 * 60)  # every 6 hours check the day.
+		if not has_checked_once:
+			has_checked_once = True
 		
 		if not utility.is_Allowance_Day() and has_given_allowance_today:
 			has_given_allowance_today = False
@@ -508,9 +508,9 @@ async def give_allowance():
 							if bank_account is None:
 								print(f"Bank account not found for user: {account['user_id']} in guild: {guild}")
 								continue
-							new_balance_msg = f"New Balance: {currency_symbol}{bank_account[2]+account['amount']}"
+							new_balance_msg = f"New Balance: {currency_symbol}{bank_account[3]+account['amount']}"
 							
-							output += f"{member.mention} has received {currency_symbol}{account['amount']} for their allowance. {new_balance_msg}\n"
+							output += f"{member.mention}:  Amount: {currency_symbol}{account['amount']}. Bot Usage: {int(bank_account[5])} times. {new_balance_msg}\n"
 						
 						# Actually give out the allowance after numerous checks have been made.
 						database.give_allowance(allowance_info=allowance_list[guild])
@@ -521,7 +521,7 @@ async def give_allowance():
 						# Give the bot a break between messages
 			has_given_allowance_today = True
 
-		await asyncio.sleep(6 * 60 * 60)  # every 6 hours check the day.
+		
 
 async def get_guild_emoji(guild:discord.Guild, emoji_name:str) -> discord.Emoji:
 	"""
@@ -632,10 +632,12 @@ async def on_reaction_add(reaction:discord.Reaction, user:discord.User):
 	if user.id in ignore_these_user_reactions:
 		return
 	reaction_message = reaction.message
-	
-	if random.randint(1, 100) >= 75:
+
+	react_roll = random.randint(1, 100)
+	print(f"Reaction added by user: {user.name}. Rolled: {react_roll}")
+	if react_roll >= 70:
 		try:
-			database.incriment_bot_usage(guild_id=reaction.guild.id, user_id=reaction.author.id)
+			database.incriment_bot_usage(guild_id=reaction.message.guild.id, user_id=user.id)
 			emoji_name = reaction.emoji.name if isinstance(reaction.emoji, discord.Emoji) else str(reaction.emoji)
 			emoji_name_to_add = await get_bot_equivilant_emoji(emoji_name=emoji_name)
 			if "bot" in emoji_name_to_add:
@@ -736,6 +738,18 @@ async def ensure_emojis_in_guilds(client: discord.Client):
 				except Exception as e:
 					print(f"Failed to create emoji '{emoji_name}' in guild '{guild.name}': {e}")
 					continue
+
+@command_tree.command(name="test",description="Testing the latest code changes that imafella is working on. Don't call this.")
+async def test(interaction: discord.Interaction):
+	"""
+	Test command to check if the bot is working.
+	"""
+	database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
+	username = interaction.user.mention
+	interaction.response.defer()  # Deferring the response to allow for longer processing time
+	
+
+	await interaction.followup.send(content=f"{username}, this is a test command. The bot is working!")
 
 #Runs the bot		
 client.run(TOKEN)

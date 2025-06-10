@@ -53,7 +53,7 @@ def is_past_Allowance_Time():
 
 def is_Allowance_Day():
     # Get the current time
-    return check_if_day(os.getenv('ALLOWANCE_DAY', "0"))  # Monday is 0
+    return check_if_day(int(os.getenv('ALLOWANCE_DAY', "5")))  # Monday is 0
 
 def is_classic_lotto_draw_day():
     """

@@ -43,12 +43,16 @@ class Roulette(discord.app_commands.Group):
         super().__init__(name="roulette", description="Roulette betting commands")
 
     async def are_adjacent_split(self, num1: int, num2: int) -> bool:
-        # Both numbers must be between 1 and 36
-        if not (1 <= num1 <= 36 and 1 <= num2 <= 36):
+        # Both numbers must be between 0 and 36
+        if not (0 <= num1 <= 36 and 0 <= num2 <= 36):
             return False
 
         # Ensure num1 < num2 for easier checks
         n1, n2 = sorted([num1, num2])
+
+        if n1 == 0 and n2 in [1, 2, 3]:
+            # Special case for 0, which can only be split with 1, 2, or 3
+            return True
 
         # Horizontal: next to each other in the same row
         if n2 - n1 == 1 and (n1 - 1) // 3 == (n2 - 1) // 3:
@@ -586,26 +590,14 @@ class Roulette(discord.app_commands.Group):
             await interaction.response.send_message(content=pickRandomRouletteBetTooBigResponse(username=username, amount=amount, currency_name=guild_currency[2], currency_symbol=guild_currency[3], bank_balance=bank_account[3]))
             return
         dozen = choice.value
-        # Validate bet
-        if dozen < 1 or dozen > 37:
-            await interaction.response.send_message(content=f"You need to select one of the dozens. 1, 2, or 3.")
-        if  0 >= amount:
-            await interaction.response.send_message(content="No negative bets! Do I need to call a bouncer?")
-            return
+        
         bet_details = ""
-        # Adjusts the value of dozen so that it is either 1, 2, or 3.
-        if 13 > dozen > 3:
-            dozen = 1
-        if 25 > dozen > 12:
-            dozen = 2
-        if 37 > dozen > 24:
-            dozen = 3 
-
+        
         if dozen == 1:
             bet_details = "1,2,3,4,5,6,7,8,9,10,11,12"
-        if dozen == 2:
+        elif dozen == 2:
             bet_details = "13,14,15,16,17,18,19,20,21,22,23,24"
-        if dozen == 3:
+        elif dozen == 3:
             bet_details = "25,26,27,28,29,30,31,32,33,34,35,36"
         else: # Get fucked on this error
             bet_details = "0"

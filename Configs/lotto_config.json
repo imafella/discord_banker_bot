@@ -33,8 +33,8 @@
                 "odds":"1 in 8"
             },
             "1":{
-                "winnings":0,
-                "description":"Match 1 number, no prize.",
+                "winnings":5,
+                "description":"Match 1 number, minor prize.",
                 "odds":"1 in 2.3"
             },
             "0":{

@@ -542,7 +542,7 @@ class DatabaseConnection:
         self.connect()
 
         # Set the lotto ticket results
-        self.cursor.execute(self.config["update"]["update_lotto_ticket_results"], ( ticket_id, matches, winnings,))
+        self.cursor.execute(self.config["update"]["update_lotto_ticket_results"], ( matches, winnings, ticket_id, ))
         if winnings > 0:
             # If the user won, update their bank balance
             self.cursor.execute(self.config["update"]["update_increase_user_bank_balance"], (winnings, guild_id, user_id,))

@@ -58,6 +58,9 @@ class Card(discord.app_commands.Group):
     async def search(self, interaction: discord.Interaction, card_id:str=None, card_name:str=None, pack:str=None,color:str=None, type:str=None):
         """Get a Digimon card by name or ID."""
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
+        await interaction.response.defer()
+
+        username = interaction.user.name
 
         if pack is not None:
             # Check if pack is format BTXX or EXXX and not BT-XX or E-XX
@@ -74,26 +77,35 @@ class Card(discord.app_commands.Group):
         card_response = await self.digimon_api.get_card(card_id=card_id, name=card_name, color=color, type=type, pack=pack)
 
         if card_response is None or len(card_response) == 0:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 content=f"Card '{card_name}' not found. Please check the spelling or try a different name... or yell at Imafella."
             )
             return
         
+        
+        target_channel = interaction.channel
         # if multiple cards are returned
         if len(card_response) > 1:
-            msg = f"Multiple cards found:\nPlease specify a card ID or name to narrow down the search."
-            msg+= f"\nCards found:\n"
-            for index, card in enumerate(card_response):
-                msg += f"{index+1}) ID: {card['id']} Name: {card['name']} Type: {card['type']}\n"
-            if len(card_response) >= 15:
-                msg = "Too many cards found. Please narrow down your search by providing additional paramseters like ID, name, color, or type. Or try specifying the pack ID"
-            await interaction.response.send_message(
-                content=msg
-            )
+            batches = [card_response[i:i+20] for i in range(0, len(card_response), 20)]
+            for batch_num, batch in enumerate(batches):
+                msg = ""
+                for index, card in enumerate(batch):
+                    msg += f"{index+1 + batch_num*20}) ID: {card['id']} Name: {card['name']} Type: {card['type']}\n"
+                if batch_num == 0:
+                    # Use response for the first message
+                    await interaction.followup.send(content=msg)
+                else:
+                # Use followup for additional messages after the first
+                    await target_channel.send(content=msg)
             return
-
         if "id" in card_response[0]:
-            await interaction.response.send_message(content=f"https://images.digimoncard.io/images/cards/{card_response[0]["id"]}.jpg")
+            try:
+                await interaction.followup.send(content=f"https://images.digimoncard.io/images/cards/{card_response[0]["id"]}.jpg")
+            except Exception as e:
+                await interaction.followup.send(
+                    content=f"Card image not found for ID {card_response[0]['id']}. Printing card details instead.\n\n{json.dumps(card_response[0], indent=4, ensure_ascii=False)}"
+                )
+                traceback.print_exc()
             return
         
         await interaction.response.send_message(
