@@ -6,6 +6,7 @@ import random
 
 import os, traceback
 from dotenv import load_dotenv
+from models.bank_account import bank_account as BankAccount
 
 
 
@@ -60,9 +61,9 @@ class Lotto(discord.app_commands.Group):
         # matches = {winnings, description, odds}
         ticket_cost = game_type["ticket_price"]
         
-        if ticket_cost > bank_account[3]:
+        if ticket_cost > bank_account.balance:
             # TODO - Add a response for when the user doesn't have enough money
-            await interaction.response.send_message(content=f"{username}, you don't have enough {guild_currency[2]}s to buy a ticket. You need at least {ticket_cost} {guild_currency[2]}s.")
+            await interaction.response.send_message(content=f"{username}, you don't have enough {guild_currency.name}s to buy a ticket. You need at least {ticket_cost} {guild_currency.name}s.")
             return
         numbers = [number1, number2, number3, number4, number5, number6]
 
@@ -132,7 +133,7 @@ class Lotto(discord.app_commands.Group):
         msg = "Your historic Lotto tickets:\n"
         for ticket in tickets:
             ticket_type = self.ticket_types[int(ticket[3])]
-            msg += f"Timestamp: {ticket[5]} Type: {ticket_type}, Numbers: {(" ").join(ticket[4].split(','))}, Matches: {ticket[7]}, Winnings: {ticket[8]} {guild_currency[2]}s\n"
+            msg += f"Timestamp: {ticket[5]} Type: {ticket_type}, Numbers: {(" ").join(ticket[4].split(','))}, Matches: {ticket[7]}, Winnings: {ticket[8]} {guild_currency.name}s\n"
         
         await interaction.response.send_message(content=msg)
 
@@ -148,9 +149,9 @@ class Lotto(discord.app_commands.Group):
             # game_type = {type, name, description, ticket_price, matches}
             # matches = {winnings, description, odds}
             msg += f"**{lotto_config[key]['name']}**:\n" 
-            msg+=f"{lotto_config[key]['description']}\nTicket Price: {lotto_config[key]['ticket_price']} {guild_currency[2]}s\n"
+            msg+=f"{lotto_config[key]['description']}\nTicket Price: {lotto_config[key]['ticket_price']} {guild_currency.name}s\n"
             jack_pot_matches = list(lotto_config[key]['matches'].keys())[0]
-            msg+=f"Jackpot: {lotto_config[key]['matches'][jack_pot_matches]['winnings']} {guild_currency[2]}s (Odds: {lotto_config[key]['matches'][jack_pot_matches]['odds']})\n\n"
+            msg+=f"Jackpot: {lotto_config[key]['matches'][jack_pot_matches]['winnings']} {guild_currency.name}s (Odds: {lotto_config[key]['matches'][jack_pot_matches]['odds']})\n\n"
         msg+="**Commands:**"
         for command in self.commands:
             msg+= f"\n\n/lotto {command.name} - {command.description}"

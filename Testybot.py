@@ -12,6 +12,9 @@ from CommandTrees import Roulette_Bet
 from CommandTrees.lotto import Lotto
 from CommandTrees.digimon_card import Card
 from Connections.GPT_Connection import GPTConnection
+from urlextract import URLExtract
+import argparse
+from models.bank_account import bank_account as BankAccount
 
 
 #
@@ -20,12 +23,14 @@ from Connections.GPT_Connection import GPTConnection
 intents = discord.Intents.all()
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
+Test_TOKEN = os.getenv("DISCORD_TESTING_TOKEN")
 admins = json.loads(os.getenv("ALLOWED_ADMINS","[]"))
 ignore_these_user_msgs = json.loads(os.getenv("ignore_user_msgs", "[]"))
 ignore_these_user_reactions = json.loads(os.getenv("ignore_user_reactions", "[]"))
 database = DatabaseConnection(os.getenv('DB_PATH'))
 mal_connection = MALConnection()
 has_given_allowance_today = False
+extractor = URLExtract()
 
 client = discord.Client(intents=intents)
 
@@ -75,7 +80,7 @@ async def has_sent_message_today(channel: discord.TextChannel, search_string: st
 	now = datetime.datetime.now(ZoneInfo("America/St_Johns"))
 	today = now.date()
 	async for message in channel.history(limit=800):  # Adjust limit as needed
-		if message.author == client.user and message.created_at.date() == today:
+		if (message.author == client.user or message.author.id in ignore_these_user_msgs) and message.created_at.date() == today:
 			# Check plain text content for the search string
 			if search_string in message.content :          
 				return True
@@ -260,14 +265,14 @@ async def roulette_game(guild_id:int):
 
 		bet_output = ""
 		guild_currency = database.get_guild_currency_details(guild_id=guild_id)
-		currency_name = guild_currency[2] if guild_currency else "currency"
-		currency_symbol = guild_currency[3] if guild_currency else "$"
+		currency_name = guild_currency.name if guild_currency else "currency"
+		currency_symbol = guild_currency.symbol if guild_currency else "$"
 		for bet in bets:
 			username = guild.get_member(bet['user_id']).mention
 			try:
 				bet_outcome = await roulette.apply_roulette_results(guild_id=guild_id, bet=bet, result=result)
 				account = database.get_user_bank_account_details(user_id=bet['user_id'], guild_id=guild_id)
-				balance = account[3] if account else 0
+				balance = account.balance if account else 0
 				if bet_outcome[1]: # A win
 					bet_output += f"{username} won {bet_outcome[0]} for betting {bet['type']} on {bet['input']} with a bet of {bet['amount']}! New Balance of: {balance} {currency_name}s\n"
 				else:  # A loss
@@ -327,11 +332,7 @@ async def classic_lotto_game(guild_id:int):
 			print(f"Today is not a classic lotto day for guild: {guild_id}. Skipping.")
 			continue
 
-		# Post same day draw ad if it's a draw day and not past the draw time
-		if utility.is_classic_lotto_draw_day() and not utility.is_past_classic_lotto_draw_time() and utility.check_if_past_time(12):
-			# Post ad for lotto			
-			await lotto_ad(guild_id=guild_id, target_channel=target_channel, title="Classic Lotto Ad!", description="Classic lotto being drawn later today! Get your tickets now!", footer="use '/lotto buy_classic_ticket' to get your ticket!", color=discord.Color.red())
-			continue
+		
 
 		if utility.is_classic_lotto_draw_day() and not utility.is_past_classic_lotto_draw_time():
 			continue  # If it's a draw day but not past the draw time, skip the draw
@@ -347,6 +348,10 @@ async def classic_lotto_game(guild_id:int):
 		if has_already_drawn:
 			print(f"Classic lotto draw has already been done today for guild: {guild_id}. Skipping.")
 			continue
+
+		await lotto_ad(guild_id=guild_id, target_channel=target_channel, title="Classic Lotto Ad!", description="Classic lotto being drawn today in 2 hours! Get your tickets now!", footer="use '/lotto buy_classic_ticket' to get your ticket!", color=discord.Color.red())
+		
+		await asyncio.sleep(2 * 60 * 60)
 		
 		# If we have tickets, process them
 		print(f"In Guild: {guild_id}, Found {len(tickets)} classic lotto tickets to process.")
@@ -377,13 +382,13 @@ async def classic_lotto_game(guild_id:int):
 				print(f"Bank account not found for user: {user.id} in guild: {guild_id}")
 				continue
 
-			new_balance_msg = f"New Balance: {guild_currency[3]}{bank_account[3]}"
+			new_balance_msg = f"New Balance: {guild_currency.symbol}{bank_account.balance}"
 			if matches == 0:
 				game_results += f"{user.mention} did not win with ticket: {ticket['ticket_numbers']}. {new_balance_msg}\n"
 			elif str(matches) == list(lotto_game_details['matches'].keys())[0]: # This is the jackpot match
 				game_results += f"{user.mention} won the jackpot of {winnings} with ticket: {ticket['ticket_numbers']} (Matched {matches} numbers). {new_balance_msg}\n"
 			else:
-				game_results += f"{user.mention} won {winnings} with ticket: {ticket['ticket_numbers']} (Matched {matches} numbers). Old Balance: {guild_currency[3]}{bank_account[3]}\n"
+				game_results += f"{user.mention} won {winnings} with ticket: {ticket['ticket_numbers']} (Matched {matches} numbers). Old Balance: {guild_currency.symbol}{bank_account.balance}\n"
 		
 		## -- Play the lotto draw -- ##
 		lotto_draw = discord.Embed(
@@ -495,7 +500,7 @@ async def give_allowance():
 						
 						output="Today is allowance day! The following users have received their allowance:\n"
 						
-						currency_symbol = database.get_guild_currency_details(guild_id=int(guild))[3]
+						currency_symbol = database.get_guild_currency_details(guild_id=int(guild)).symbol
 
 						for account in allowance_list[guild]:
 							member = discord_guild.get_member(account['user_id'])
@@ -508,9 +513,9 @@ async def give_allowance():
 							if bank_account is None:
 								print(f"Bank account not found for user: {account['user_id']} in guild: {guild}")
 								continue
-							new_balance_msg = f"New Balance: {currency_symbol}{bank_account[3]+account['amount']}"
+							new_balance_msg = f"New Balance: {currency_symbol}{bank_account.balance+account['amount']}"
 							
-							output += f"{member.mention}:  Amount: {currency_symbol}{account['amount']}. Bot Usage: {int(bank_account[5])} times. {new_balance_msg}\n"
+							output += f"{member.mention}:  Amount: {currency_symbol}{account['amount']}. Bot Usage: {account['bot_usage']} times. {new_balance_msg}\n"
 						
 						# Actually give out the allowance after numerous checks have been made.
 						database.give_allowance(allowance_info=allowance_list[guild])
@@ -538,19 +543,10 @@ async def get_guild_emoji(guild:discord.Guild, emoji_name:str) -> discord.Emoji:
 #
 
 @client.event
-async def on_error(event, *args, **kwargs):
-	logging.error("An error occurred in event: %s", event)
-	logging.error("Error details:\n%s", traceback.format_exc())
-
-@client.event
-async def on_member_join(member:discord.Member):
-	username = member.mention
-	channel = member.guild.system_channel
-	if channel:
-		await channel.send(pickGreeting(username))
-
-@client.event
 async def on_ready():
+	'''
+	Starts the whole application
+	'''
 	try:
 		await command_tree.sync()
 	except discord.HTTPException as e:
@@ -573,7 +569,21 @@ async def on_ready():
 	print('Bot ID: {}'.format(client.user.id))
 
 @client.event
+async def on_error(event, *args, **kwargs):
+	logging.error("An error occurred in event: %s", event)
+	logging.error("Error details:\n%s", traceback.format_exc())
+
+@client.event
+async def on_member_join(member:discord.Member):
+	username = member.mention
+	channel = member.guild.system_channel
+	if channel:
+		await channel.send(pickGreeting(username))
+
+@client.event
 async def on_user_update(before:discord.User, after:discord.User):
+	if before.id in ignore_these_user_msgs:
+		return
 	if (before.avatar != after.avatar or before.display_avatar != after.display_avatar) and before.id != client.user.id:
 		channel = after.mutual_guilds[0].system_channel
 		if channel:
@@ -584,6 +594,8 @@ async def on_user_update(before:discord.User, after:discord.User):
 
 @client.event
 async def on_member_update(before:discord.Member, after:discord.Member):
+	if before.id in ignore_these_user_msgs:
+		return
 	if before.avatar != after.avatar or before.display_avatar != after.display_avatar:
 		channel = after.guild.system_channel
 		if channel:
@@ -594,16 +606,33 @@ async def on_member_update(before:discord.Member, after:discord.Member):
 
 @client.event
 async def on_message(message:discord.Message):
-	if message.author == client.user:
+	if message.author == client.user or message.author.id in ignore_these_user_msgs:
 		return
 	
+	urls = extractor.find_urls(message.content)
 	if "69" in message.content:
-		database.incriment_bot_usage(guild_id=message.guild.id, user_id=message.author.id)
-		await message.reply(pickRandomNiceResponse())
+		skip_nice = False
+		for mention in message.mentions:
+			if "69" in str(mention.id):
+				skip_nice = True
+		for url in urls:
+			if "69" in url:
+				skip_nice = True
+		if not skip_nice:
+			database.incriment_bot_usage(guild_id=message.guild.id, user_id=message.author.id)
+			await message.reply(pickRandomNiceResponse())
 
 	if "420" in message.content:
-		database.incriment_bot_usage(guild_id=message.guild.id, user_id=message.author.id)
-		await message.reply(pickRandomWeedResponse())
+		skip_forweed = False
+		for mention in message.mentions:
+			if "420" in str(mention.id):
+				skip_forweed = True
+		for url in urls:
+			if "420" in url:
+				skip_forweed = True
+		if not skip_forweed:
+			database.incriment_bot_usage(guild_id=message.guild.id, user_id=message.author.id)
+			await message.reply(pickRandomWeedResponse())
 
 	if client.user in message.mentions:
 		database.incriment_bot_usage(guild_id=message.guild.id, user_id=message.author.id)
@@ -627,9 +656,7 @@ async def on_message(message:discord.Message):
 
 @client.event
 async def on_reaction_add(reaction:discord.Reaction, user:discord.User):
-	if user == client.user:
-		return
-	if user.id in ignore_these_user_reactions:
+	if user == client.user or user.id in ignore_these_user_reactions:
 		return
 	reaction_message = reaction.message
 
@@ -751,5 +778,11 @@ async def test(interaction: discord.Interaction):
 
 	await interaction.followup.send(content=f"{username}, this is a test command. The bot is working!")
 
+parser = argparse.ArgumentParser(description="Run Imabot")
+parser.add_argument('--test', action='store_true', help="Run Imabot in test mode using the test token")
+args = parser.parse_args()
+
+# Decide which token to use
+selected_token = Test_TOKEN if args.test else TOKEN
 #Runs the bot		
-client.run(TOKEN)
+client.run(selected_token)

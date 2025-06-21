@@ -10,6 +10,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "/home/imafella/Documents/Development/discord_banker_bot/Testybot.py",
+            "args":["--test"],
             "console": "integratedTerminal",
             "python": "/home/imafella/Documents/Development/discord_banker_bot/.venv/bin/python"
         }

@@ -1,5 +1,7 @@
 import sqlite3
 import ThingyDo.utility as utility
+from models.bank_account import bank_account as BankAccount
+from models.guild_currency import GuildCurrency, GuildCurrencyChangeCosts
 
 class DatabaseConnection:
     def __init__(self, db_name):
@@ -37,7 +39,7 @@ class DatabaseConnection:
         self.close()
         # Close the connection
 
-    def get_user_bank_account_details(self, user_id:int, guild_id:int) -> dict:
+    def get_user_bank_account_details(self, user_id:int, guild_id:int) -> BankAccount|None:
          # Connect to the database
         self.connect()
 
@@ -45,8 +47,10 @@ class DatabaseConnection:
         self.cursor.execute(self.config["select"]["select_user_bank_account_details"], (guild_id, user_id))
         result = self.cursor.fetchone()
         self.close()
-        return result
-
+        if result:
+            return BankAccount(id=result[0], guild_id=result[1], account_number=result[2], balance=result[3], bot_usage=result[4])
+        else:
+            return None
     def is_user_in_guild_bank(self, user_id:int, guild_id:int) -> bool: 
         """
         Check if a user is in the guild bank.
@@ -110,7 +114,7 @@ class DatabaseConnection:
         result = self.get_guild_details(guild_id)
         return result is not None
     
-    def get_guild_currency_details(self, guild_id:int) -> dict:
+    def get_guild_currency_details(self, guild_id:int) -> GuildCurrency | None:
         """
         Get the currency details for a given guild ID.
         :param guild_id: The ID of the guild to get currency details for.
@@ -123,7 +127,9 @@ class DatabaseConnection:
         self.cursor.execute(self.config["select"]["select_currency_details"], (guild_id,))
         result = self.cursor.fetchone()
         self.close()
-        return result
+        if result != None:
+            return GuildCurrency(id=result[0], guild_id=result[1],currency_name=result[2], currency_symbol=result[3])
+        return None
     
     
     def is_guild_bank_setup(self, guild_id:int) -> bool:
@@ -180,7 +186,7 @@ class DatabaseConnection:
         self.close()
         return not self.is_user_in_guild_bank(user_id=user_id, guild_id=guild_id)
     
-    def get_change_costs(self, guild_id:int) -> dict:
+    def get_change_costs(self, guild_id:int) -> GuildCurrencyChangeCosts | None:
         """
         Get the change costs for a given guild ID.
         :param guild_id: The ID of the guild to get change costs for.
@@ -193,7 +199,9 @@ class DatabaseConnection:
         self.cursor.execute(self.config["select"]["select_guild_currency_change_costs"], (guild_id,))
         result = self.cursor.fetchone()
         self.close()
-        return result
+        if result != None:
+            return GuildCurrencyChangeCosts(id=result[0], guild_id=result[1], name_cost=result[2], symbol_cost=result[3])
+        return None
     
     def change_currency_name(self, guild_id:int, user_id:int, new_name:str, balance:float, cost:float) -> bool:
         """

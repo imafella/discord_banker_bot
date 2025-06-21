@@ -8,6 +8,7 @@ discord = "*"
 dotenv = "*"
 asyncio = "*"
 debugpy = "*"
+urlextract = "*"
 
 [dev-packages]
 
