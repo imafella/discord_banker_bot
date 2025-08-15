@@ -182,6 +182,8 @@ class Roulette(discord.app_commands.Group):
     # --- Inside Bets ---
 
     @discord.app_commands.command(name="straight_bet", description="Bet on a single number (0 or 1–36). Payout: 35:1")
+    @discord.app_commands.describe(number='The number to bet on.')
+    @discord.app_commands.describe(amount='The amount of Server Currency to bet. Bet -1 to go all in.')
     async def straight_bet(self, interaction: discord.Interaction, number: int, amount: float):
         """Place a straight up bet on a single number."""
         self.database.incriment_bot_usage(guild_id=interaction.guild.id, user_id=interaction.user.id)
@@ -200,6 +202,11 @@ class Roulette(discord.app_commands.Group):
         if bank_account is None:
             await interaction.response.send_message(content="I broke myself trying to get your bank balance.")
             return
+        
+        # User is all in baby
+        if amount == -1:
+            amount = bank_account.balance
+
         # Does user have enough money for the bet
         if amount > bank_account.balance:
             await interaction.response.send_message(content=pickRandomRouletteBetTooBigResponse(username=username, amount=amount, currency_name=guild_currency.name, currency_symbol=guild_currency.symbol, bank_balance=bank_account.balance))
@@ -209,7 +216,7 @@ class Roulette(discord.app_commands.Group):
         if number > 36 or number < 0:
             await interaction.response.send_message(f"Straight bet needs to be placed on a number 0-36. You picked {number}. Do better.")
         if  0 >= amount:
-            await interaction.response.send_message(content="No negative bets! Do I need to call a bouncer?")
+            await interaction.response.send_message(content="No zero/negative bets! Do I need to call a bouncer?")
             return
         
         bet_type = "Straight"
@@ -222,6 +229,7 @@ class Roulette(discord.app_commands.Group):
         await interaction.response.send_message(content=msg)
 
     @discord.app_commands.command(name="split_bet", description="Bet on two adjacent numbers. Payout: 17:1")
+    @discord.app_commands.describe(amount='The amount of Server Currency to bet. Bet -1 to go all in.')
     async def split_bet(self, interaction: discord.Interaction, number1: int, number2: int, amount: float):
         """Place a split bet between two adjacent numbers."""
 
@@ -241,6 +249,11 @@ class Roulette(discord.app_commands.Group):
         if bank_account is None:
             await interaction.response.send_message(content="I broke myself trying to get your bank balance.")
             return
+        
+        # User is all in baby
+        if amount == -1:
+            amount = bank_account.balance
+
         # Does user have enough money for the bet
         if amount > bank_account.balance:
             await interaction.response.send_message(content=pickRandomRouletteBetTooBigResponse(username=username, amount=amount, currency_name=guild_currency.name, currency_symbol=guild_currency.symbol, bank_balance=bank_account.balance))
@@ -267,6 +280,7 @@ class Roulette(discord.app_commands.Group):
         await interaction.response.send_message(content=msg)
 
     @discord.app_commands.command(name="street_bet", description="Bet on a row of three numbers. Payout: 11:1")
+    @discord.app_commands.describe(amount='The amount of Server Currency to bet. Bet -1 to go all in.')
     async def street_bet(self, interaction: discord.Interaction, row_start:int, amount:float):
         """Place a street bet (row of three numbers, e.g., 1-2-3)."""
 
@@ -286,6 +300,11 @@ class Roulette(discord.app_commands.Group):
         if bank_account is None:
             await interaction.response.send_message(content="I broke myself trying to get your bank balance.")
             return
+        
+        # User is all in baby
+        if amount == -1:
+            amount = bank_account.balance
+
         # Does user have enough money for the bet
         if amount > bank_account.balance:
             await interaction.response.send_message(content=pickRandomRouletteBetTooBigResponse(username=username, amount=amount, currency_name=guild_currency.name, currency_symbol=guild_currency.symbol, bank_balance=bank_account.balance))
@@ -312,6 +331,7 @@ class Roulette(discord.app_commands.Group):
         await interaction.response.send_message(content=msg)
 
     @discord.app_commands.command(name="corner_bet", description="Bet on four numbers in a square. You select the one on the bottom left of the square Payout: 8:1")
+    @discord.app_commands.describe(amount='The amount of Server Currency to bet. Bet -1 to go all in.')
     async def corner_bet(self, interaction: discord.Interaction, bottom_left_of_corner:int, amount: float):
         """Place a corner bet on four numbers in a square."""
 
@@ -331,6 +351,11 @@ class Roulette(discord.app_commands.Group):
         if bank_account is None:
             await interaction.response.send_message(content="I broke myself trying to get your bank balance.")
             return
+        
+        # User is all in baby
+        if amount == -1:
+            amount = bank_account.balance
+
         # Does user have enough money for the bet
         if amount > bank_account.balance:
             await interaction.response.send_message(content=pickRandomRouletteBetTooBigResponse(username=username, amount=amount, currency_name=guild_currency.name, currency_symbol=guild_currency.symbol, bank_balance=bank_account.balance))
@@ -356,6 +381,7 @@ class Roulette(discord.app_commands.Group):
         await interaction.response.send_message(content=msg)
 
     @discord.app_commands.command(name="sixline_bet", description="Bet on two adjacent rows (six numbers) Also called a Double Street. Payout: 5:1")
+    @discord.app_commands.describe(amount='The amount of Server Currency to bet. Bet -1 to go all in.')
     async def sixline_bet(self, interaction: discord.Interaction, row_start: int, amount: float):
         """Place a six line bet (two adjacent rows, e.g., 1-6)."""
 
@@ -375,6 +401,11 @@ class Roulette(discord.app_commands.Group):
         if bank_account is None:
             await interaction.response.send_message(content="I broke myself trying to get your bank balance.")
             return
+        
+        # User is all in baby
+        if amount == -1:
+            amount = bank_account.balance
+
         # Does user have enough money for the bet
         if amount > bank_account.balance:
             await interaction.response.send_message(content=pickRandomRouletteBetTooBigResponse(username=username, amount=amount, currency_name=guild_currency.name, currency_symbol=guild_currency.symbol, bank_balance=bank_account.balance))
@@ -411,6 +442,7 @@ class Roulette(discord.app_commands.Group):
         discord.app_commands.Choice(name="Blacks", value="black"),
         discord.app_commands.Choice(name="Reds", value="red")
     ])
+    @discord.app_commands.describe(amount='The amount of Server Currency to bet. Bet -1 to go all in.')
     async def color_bet(self, interaction: discord.Interaction, choice:discord.app_commands.Choice[str], amount: float):
         """Bet on color: 'red' or 'black'."""
 
@@ -430,6 +462,11 @@ class Roulette(discord.app_commands.Group):
         if bank_account is None:
             await interaction.response.send_message(content="I broke myself trying to get your bank balance.")
             return
+        
+        # User is all in baby
+        if amount == -1:
+            amount = bank_account.balance
+
         # Does user have enough money for the bet
         if amount > bank_account.balance:
             await interaction.response.send_message(content=pickRandomRouletteBetTooBigResponse(username=username, amount=amount, currency_name=guild_currency.name, currency_symbol=guild_currency.symbol, bank_balance=bank_account.balance))
@@ -444,10 +481,10 @@ class Roulette(discord.app_commands.Group):
         bet_details = ""
         # if red, sets bet_details to all the red numbers
         if color.lower() == "red":
-            bet_details = f"1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36"
+            bet_details = f"1,3,5,7,9,12,14,16,18,21,23,25,27,28,30,32,34,36"
         # if black, sets bet_details to all the black numbers
         if color.lower() == "black":
-            bet_details = f"2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35"
+            bet_details = f"2,4,6,8,10,11,13,15,17,19,20,22,24,26,29,31,33,35"
         
         self.database.place_bet_roulette(guild_id=interaction.guild_id, user_id=interaction.user.id, bet_amount=amount, bet_type="color", bet_details=f"{bet_details}", bet_input=color)                
 
@@ -463,6 +500,7 @@ class Roulette(discord.app_commands.Group):
         discord.app_commands.Choice(name="Odds", value="odd"),
         discord.app_commands.Choice(name="Evens", value="even")
     ])
+    @discord.app_commands.describe(amount='The amount of Server Currency to bet. Bet -1 to go all in.')
     async def oddeven_bet(self, interaction: discord.Interaction, choice:discord.app_commands.Choice[str], amount: float):
         """Bet on 'odd' or 'even'."""
 
@@ -482,6 +520,11 @@ class Roulette(discord.app_commands.Group):
         if bank_account is None:
             await interaction.response.send_message(content="I broke myself trying to get your bank balance.")
             return
+        
+        # User is all in baby
+        if amount == -1:
+            amount = bank_account.balance
+
         # Does user have enough money for the bet
         if amount > bank_account.balance:
             await interaction.response.send_message(content=pickRandomRouletteBetTooBigResponse(username=username, amount=amount, currency_name=guild_currency.name, currency_symbol=guild_currency.symbol, bank_balance=bank_account.balance))
@@ -514,6 +557,7 @@ class Roulette(discord.app_commands.Group):
         discord.app_commands.Choice(name="Low", value="low"),
         discord.app_commands.Choice(name="High", value="high")
     ])
+    @discord.app_commands.describe(amount='The amount of Server Currency to bet. Bet -1 to go all in.')
     async def lowhigh_bet(self, interaction: discord.Interaction, choice:discord.app_commands.Choice[str], amount: float):
         """Bet on 'low' (1–18) or 'high' (19–36)."""
 
@@ -533,6 +577,11 @@ class Roulette(discord.app_commands.Group):
         if bank_account is None:
             await interaction.response.send_message(content="I broke myself trying to get your bank balance.")
             return
+        
+        # User is all in baby
+        if amount == -1:
+            amount = bank_account.balance
+
         # Does user have enough money for the bet
         if amount > bank_account.balance:
             await interaction.response.send_message(content=pickRandomRouletteBetTooBigResponse(username=username, amount=amount, currency_name=guild_currency.name, currency_symbol=guild_currency.symbol, bank_balance=bank_account.balance))
@@ -566,6 +615,7 @@ class Roulette(discord.app_commands.Group):
         discord.app_commands.Choice(name="2nd", value=2),
         discord.app_commands.Choice(name="3rd", value=3)
     ])
+    @discord.app_commands.describe(amount='The amount of Server Currency to bet. Bet -1 to go all in.')
     async def dozen_bet(self, interaction: discord.Interaction, choice:discord.app_commands.Choice[int], amount: float):
         """Bet on a dozen: 1 (1–12), 2 (13–24), or 3 (25–36)."""
 
@@ -585,6 +635,11 @@ class Roulette(discord.app_commands.Group):
         if bank_account is None:
             await interaction.response.send_message(content="I broke myself trying to get your bank balance.")
             return
+        
+        # User is all in baby
+        if amount == -1:
+            amount = bank_account.balance
+
         # Does user have enough money for the bet
         if amount > bank_account.balance:
             await interaction.response.send_message(content=pickRandomRouletteBetTooBigResponse(username=username, amount=amount, currency_name=guild_currency.name, currency_symbol=guild_currency.symbol, bank_balance=bank_account.balance))
@@ -616,6 +671,7 @@ class Roulette(discord.app_commands.Group):
         discord.app_commands.Choice(name="2nd", value=2),
         discord.app_commands.Choice(name="3rd", value=3)
     ])
+    @discord.app_commands.describe(amount='The amount of Server Currency to bet. Bet -1 to go all in.')
     async def column_bet(self, interaction: discord.Interaction, choice:discord.app_commands.Choice[int], amount: float):
         """Bet on a column: 1 (1st), 2 (2nd), or 3 (3rd)."""
 
@@ -635,6 +691,11 @@ class Roulette(discord.app_commands.Group):
         if bank_account is None:
             await interaction.response.send_message(content="I broke myself trying to get your bank balance.")
             return
+        
+        # User is all in baby
+        if amount == -1:
+            amount = bank_account.balance
+
         # Does user have enough money for the bet
         if amount > bank_account.balance:
             await interaction.response.send_message(content=pickRandomRouletteBetTooBigResponse(username=username, amount=amount, currency_name=guild_currency.name, currency_symbol=guild_currency.symbol, bank_balance=bank_account.balance))

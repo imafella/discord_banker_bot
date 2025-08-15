@@ -17,3 +17,6 @@ discord_bot.db
 discord_bot.db
 ongoing.sh
 logs/imabot.pid
+discord_bot.db
+ongoing_old.sh
+output.log

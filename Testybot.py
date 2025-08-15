@@ -27,6 +27,8 @@ Test_TOKEN = os.getenv("DISCORD_TESTING_TOKEN")
 admins = json.loads(os.getenv("ALLOWED_ADMINS","[]"))
 ignore_these_user_msgs = json.loads(os.getenv("ignore_user_msgs", "[]"))
 ignore_these_user_reactions = json.loads(os.getenv("ignore_user_reactions", "[]"))
+MAIN_ID = os.getenv("ID")
+TEST_ID = os.getenv("TEST_ID")
 database = DatabaseConnection(os.getenv('DB_PATH'))
 mal_connection = MALConnection()
 has_given_allowance_today = False
@@ -158,7 +160,7 @@ async def change_presense_periodically():
 
 async def change_avatar_periodically():
 	await client.wait_until_ready()
-	while not client.is_closed():
+	while not client.is_closed() and str(client.application_id) != TEST_ID:
 		await client.user.edit(avatar=utility.load_random_avatar())
 		print(f"Changed avatar")
 		await asyncio.sleep(14 * 60 * 60)  # Change every 14 hours
@@ -659,10 +661,12 @@ async def on_reaction_add(reaction:discord.Reaction, user:discord.User):
 	if user == client.user or user.id in ignore_these_user_reactions:
 		return
 	reaction_message = reaction.message
+	if reaction_message.author.id in ignore_these_user_msgs:
+		return
 
 	react_roll = random.randint(1, 100)
 	print(f"Reaction added by user: {user.name}. Rolled: {react_roll}")
-	if react_roll >= 70:
+	if react_roll >= 75:
 		try:
 			database.incriment_bot_usage(guild_id=reaction.message.guild.id, user_id=user.id)
 			emoji_name = reaction.emoji.name if isinstance(reaction.emoji, discord.Emoji) else str(reaction.emoji)
@@ -672,9 +676,14 @@ async def on_reaction_add(reaction:discord.Reaction, user:discord.User):
 				await reaction_message.add_reaction(emoji_to_add)
 				print(f"Added reaction: {emoji_to_add.name} to message by user: {reaction_message.author.name}")
 				return
-			
-			await reaction_message.add_reaction(reaction.emoji)
-			print(f"Added reaction: {reaction.emoji} to message by user: {reaction_message.author.name}")
+			elif "bot_" not in emoji_name_to_add and os.getenv("enable_non_bot_reactions", "false").lower() == "true":
+				await reaction_message.add_reaction(reaction.emoji)
+				print(f"Added reaction: {reaction.emoji} to message by user: {reaction_message.author.name}")
+				return
+
+
+			print(f"Did not add reaction: {reaction.emoji} to message by user: {reaction_message.author.name}")
+
 		except Exception as e:
 			logging.error(f"Failed to add reaction: {e}")
 	return
