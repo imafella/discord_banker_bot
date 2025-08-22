@@ -9,6 +9,8 @@ dotenv = "*"
 asyncio = "*"
 debugpy = "*"
 urlextract = "*"
+requests = "*"
+openai = "*"
 
 [dev-packages]
 

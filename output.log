@@ -1,15 +1,34 @@
-2025-08-19 15:37:17,086:INFO:HTTP Request: GET https://api.openai.com/v1/assistants/asst_JNBneKAQp334VzhFMsdpihbP "HTTP/1.1 200 OK"
-2025-08-19 15:37:17,574:INFO:HTTP Request: POST https://api.openai.com/v1/threads "HTTP/1.1 200 OK"
-2025-08-19 15:37:17,578:INFO:logging in using static token
-2025-08-19 15:37:18,513:INFO:Shard ID None has connected to Gateway (Session ID: e2df548b094c905dcd5008454e2b67b5).
-2025-08-19 16:33:35,576:INFO:Shard ID None has successfully RESUMED session e2df548b094c905dcd5008454e2b67b5.
-2025-08-19 19:38:12,756:INFO:Shard ID None has successfully RESUMED session e2df548b094c905dcd5008454e2b67b5.
-2025-08-19 20:39:06,318:INFO:Shard ID None has successfully RESUMED session e2df548b094c905dcd5008454e2b67b5.
-2025-08-19 22:28:27,863:INFO:Shard ID None has successfully RESUMED session e2df548b094c905dcd5008454e2b67b5.
-2025-08-19 23:17:34,806:ERROR:Failed to add reaction: 403 Forbidden (error code: 90001): Reaction blocked
-2025-08-20 00:51:02,217:INFO:Shard ID None has successfully RESUMED session e2df548b094c905dcd5008454e2b67b5.
-2025-08-20 01:18:51,057:INFO:Shard ID None has successfully RESUMED session e2df548b094c905dcd5008454e2b67b5.
-2025-08-20 02:33:22,381:INFO:Shard ID None has successfully RESUMED session e2df548b094c905dcd5008454e2b67b5.
-2025-08-20 04:59:22,315:INFO:Shard ID None has successfully RESUMED session e2df548b094c905dcd5008454e2b67b5.
-2025-08-20 08:23:11,683:INFO:Shard ID None has successfully RESUMED session e2df548b094c905dcd5008454e2b67b5.
-2025-08-20 08:37:01,880:INFO:Shard ID None has successfully RESUMED session e2df548b094c905dcd5008454e2b67b5.
+2025-08-20 15:20:30,555:INFO:HTTP Request: GET https://api.openai.com/v1/assistants/asst_JNBneKAQp334VzhFMsdpihbP "HTTP/1.1 200 OK"
+2025-08-20 15:20:31,734:INFO:HTTP Request: POST https://api.openai.com/v1/threads "HTTP/1.1 200 OK"
+2025-08-20 15:20:31,757:INFO:logging in using static token
+2025-08-20 15:20:32,909:INFO:Shard ID None has connected to Gateway (Session ID: fc6e6cbf9642b280a356515057acce8a).
+2025-08-20 18:01:49,998:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-20 19:22:50,320:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-20 20:01:10,572:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-20 21:16:38,561:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-20 21:28:17,167:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-21 01:18:31,876:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-21 02:59:31,799:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-21 05:45:54,692:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-21 09:25:38,760:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-21 10:37:07,757:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-21 11:17:00,428:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-21 12:06:54,519:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-21 13:04:33,795:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-21 14:58:12,145:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-21 16:28:40,814:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-21 19:15:46,800:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-21 20:28:24,593:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-21 21:08:17,745:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-21 22:51:31,203:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-21 22:54:11,012:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-21 22:57:03,328:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-22 01:07:22,790:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-22 01:57:00,732:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-22 03:17:23,083:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-22 03:52:37,620:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-22 05:01:33,417:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-22 06:52:27,653:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-22 09:55:18,537:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-22 10:01:27,606:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
+2025-08-22 10:10:52,907:INFO:Shard ID None has successfully RESUMED session 241128bfccbd4bab3bb90aa39d9fab75.
