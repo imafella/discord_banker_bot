@@ -3,6 +3,9 @@ import ThingyDo.utility as utility
 from models.bank_account import bank_account as BankAccount
 from models.guild_currency import GuildCurrency, GuildCurrencyChangeCosts
 
+
+
+
 class DatabaseConnection:
     def __init__(self, db_name):
         self.db_name = db_name
@@ -48,7 +51,7 @@ class DatabaseConnection:
         result = self.cursor.fetchone()
         self.close()
         if result:
-            return BankAccount(id=result[0], guild_id=result[1], account_number=result[2], balance=result[3], bot_usage=result[4])
+            return BankAccount(id=result[0], guild_id=result[1], account_number=result[2], balance=utility.floor_to_2_digits(result[3]), bot_usage=result[4])
         else:
             return None
     def is_user_in_guild_bank(self, user_id:int, guild_id:int) -> bool: 

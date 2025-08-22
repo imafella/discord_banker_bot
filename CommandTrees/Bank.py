@@ -428,7 +428,7 @@ class Bank(discord.app_commands.Group):
             if member is None:
                 # If the member is not found, we skip this account
                 continue
-            msg += f"{i+1}. {member.display_name}: {account[2]} {guild_currency.name}s\n"
+            msg += f"{i+1}. {member.display_name}: {utility.floor_to_2_digits(account[2])} {guild_currency.name}s\n"
             if i >= 4:
                 break
         
@@ -458,7 +458,7 @@ class Bank(discord.app_commands.Group):
             if member is None:
                 # If the member is not found, we skip this account
                 continue
-            msg += f"{i+1}. {member.display_name}: {account[2]} {guild_currency.name}s\n"
+            msg += f"{i+1}. {member.display_name}: {utility.floor_to_2_digits(account[2])} {guild_currency.name}s\n"
             if i >= 4:
                 break
         

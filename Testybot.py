@@ -558,9 +558,11 @@ async def on_ready():
 	client.loop.create_task(change_presense_periodically())
 	client.loop.create_task(change_avatar_periodically())
 	client.loop.create_task(give_allowance())
+	print("Done Making loops")
 
-	await command_tree.sync(guild=discord.Object(id=int(os.getenv("DIGIMON_GUILD_ID", "0"))))  # Sync the digimon card commands to the digimon guild
+	# await command_tree.sync(guild=discord.Object(id=int(os.getenv("DIGIMON_GUILD_ID", "0"))))  # Sync the digimon card commands to the digimon guild
 	await ensure_emojis_in_guilds(client)
+	print("Done Emoji Syncing")
 	
 	for guild in client.guilds:
 		await start_roulette_task(guild_id=guild.id)

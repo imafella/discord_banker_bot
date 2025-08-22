@@ -1,5 +1,6 @@
 import json, os, random
 from datetime import datetime, timedelta
+from math import floor
 
 def load_config(name) -> dict:
     """
@@ -106,3 +107,6 @@ def calculate_Allowance(allowance_info:list) -> dict:
         updated_allowance_info[str(guild_id)].append(account)
     
     return updated_allowance_info
+
+def floor_to_2_digits(value: float) -> float:
+    return floor(value * 100) / 100
